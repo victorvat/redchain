@@ -29,6 +29,8 @@ Steps to make redchain working:
 
 6. Run the crebas.sql and create the database.
 
+   psql -f puppies.sql
+
 7. Start project
 
    npm start

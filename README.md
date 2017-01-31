@@ -17,11 +17,12 @@ Steps to make redchain working:
 4. If the project still not working install next packages manually:
 
    npm install pg-promise --save
+   
    npm install bluebird --save
 
 5. Install postgres
 
-6. Run the crebas.sql and create database.
+6. Run the crebas.sql and create the database.
 
 7. Start project
 

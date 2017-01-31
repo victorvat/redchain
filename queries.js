@@ -73,7 +73,7 @@ function update_docSpec(req, res, next) {
     });
 }
 
-function removedocSpec(req, res, next) {
+function remove_docSpec(req, res, next) {
   var pupID = parseInt(req.params.id);
   db.result('delete from docSpec where id = $1', pupID)
     .then(function (result) {
@@ -155,7 +155,7 @@ function update_doc(req, res, next) {
     });
 }
 
-function removedoc(req, res, next) {
+function remove_doc(req, res, next) {
   var pupID = parseInt(req.params.id);
   db.result('delete from doc where id = $1', pupID)
     .then(function (result) {
@@ -237,7 +237,7 @@ function update_State(req, res, next) {
     });
 }
 
-function removeState(req, res, next) {
+function remove_State(req, res, next) {
   var pupID = parseInt(req.params.id);
   db.result('delete from State where id = $1', pupID)
     .then(function (result) {
@@ -319,7 +319,7 @@ function update_person(req, res, next) {
     });
 }
 
-function removeperson(req, res, next) {
+function remove_person(req, res, next) {
   var pupID = parseInt(req.params.id);
   db.result('delete from person where id = $1', pupID)
     .then(function (result) {
@@ -401,7 +401,7 @@ function update_photoData(req, res, next) {
     });
 }
 
-function removephotoData(req, res, next) {
+function remove_photoData(req, res, next) {
   var pupID = parseInt(req.params.id);
   db.result('delete from photoData where id = $1', pupID)
     .then(function (result) {
@@ -483,7 +483,7 @@ function update_photoSpec(req, res, next) {
     });
 }
 
-function removephotoSpec(req, res, next) {
+function remove_photoSpec(req, res, next) {
   var pupID = parseInt(req.params.id);
   db.result('delete from photoSpec where id = $1', pupID)
     .then(function (result) {
@@ -565,7 +565,7 @@ function update_audioDatа(req, res, next) {
     });
 }
 
-function removeaudioDatа(req, res, next) {
+function remove_audioDatа(req, res, next) {
   var pupID = parseInt(req.params.id);
   db.result('delete from audioDatа where id = $1', pupID)
     .then(function (result) {
@@ -647,7 +647,7 @@ function update_operator(req, res, next) {
     });
 }
 
-function removeoperator(req, res, next) {
+function remove_operator(req, res, next) {
   var pupID = parseInt(req.params.id);
   db.result('delete from operator where id = $1', pupID)
     .then(function (result) {
@@ -729,7 +729,7 @@ function update_regPoint(req, res, next) {
     });
 }
 
-function removeregPoint(req, res, next) {
+function remove_regPoint(req, res, next) {
   var pupID = parseInt(req.params.id);
   db.result('delete from regPoint where id = $1', pupID)
     .then(function (result) {
@@ -811,7 +811,7 @@ function update_opRule(req, res, next) {
     });
 }
 
-function removeopRule(req, res, next) {
+function remove_opRule(req, res, next) {
   var pupID = parseInt(req.params.id);
   db.result('delete from opRule where id = $1', pupID)
     .then(function (result) {
@@ -893,7 +893,7 @@ function update_Contact(req, res, next) {
     });
 }
 
-function removeContact(req, res, next) {
+function remove_Contact(req, res, next) {
   var pupID = parseInt(req.params.id);
   db.result('delete from Contact where id = $1', pupID)
     .then(function (result) {
@@ -975,7 +975,7 @@ function update_Agent(req, res, next) {
     });
 }
 
-function removeAgent(req, res, next) {
+function remove_Agent(req, res, next) {
   var pupID = parseInt(req.params.id);
   db.result('delete from Agent where id = $1', pupID)
     .then(function (result) {
@@ -1057,7 +1057,7 @@ function update_access(req, res, next) {
     });
 }
 
-function removeaccess(req, res, next) {
+function remove_access(req, res, next) {
   var pupID = parseInt(req.params.id);
   db.result('delete from access where id = $1', pupID)
     .then(function (result) {
@@ -1139,7 +1139,7 @@ function update_docImage(req, res, next) {
     });
 }
 
-function removedocImage(req, res, next) {
+function remove_docImage(req, res, next) {
   var pupID = parseInt(req.params.id);
   db.result('delete from docImage where id = $1', pupID)
     .then(function (result) {
@@ -1221,7 +1221,7 @@ function update_ref(req, res, next) {
     });
 }
 
-function removeref(req, res, next) {
+function remove_ref(req, res, next) {
   var pupID = parseInt(req.params.id);
   db.result('delete from ref where id = $1', pupID)
     .then(function (result) {
@@ -1242,85 +1242,85 @@ module.exports = {  getAll_docSpec: getAll_docSpec,
   getSingle_docSpec: getSingle_docSpec,
   create_docSpec: create_docSpec,
   update_docSpec: update_docSpec,
-  remove_docSpec: remove_docSpec
+  remove_docSpec: remove_docSpec,
 
   getAll_doc: getAll_doc,
   getSingle_doc: getSingle_doc,
   create_doc: create_doc,
   update_doc: update_doc,
-  remove_doc: remove_doc
+  remove_doc: remove_doc,
 
   getAll_State: getAll_State,
   getSingle_State: getSingle_State,
   create_State: create_State,
   update_State: update_State,
-  remove_State: remove_State
+  remove_State: remove_State,
 
   getAll_person: getAll_person,
   getSingle_person: getSingle_person,
   create_person: create_person,
   update_person: update_person,
-  remove_person: remove_person
+  remove_person: remove_person,
 
   getAll_photoData: getAll_photoData,
   getSingle_photoData: getSingle_photoData,
   create_photoData: create_photoData,
   update_photoData: update_photoData,
-  remove_photoData: remove_photoData
+  remove_photoData: remove_photoData,
 
   getAll_photoSpec: getAll_photoSpec,
   getSingle_photoSpec: getSingle_photoSpec,
   create_photoSpec: create_photoSpec,
   update_photoSpec: update_photoSpec,
-  remove_photoSpec: remove_photoSpec
+  remove_photoSpec: remove_photoSpec,
 
   getAll_audioDatа: getAll_audioDatа,
   getSingle_audioDatа: getSingle_audioDatа,
   create_audioDatа: create_audioDatа,
   update_audioDatа: update_audioDatа,
-  remove_audioDatа: remove_audioDatа
+  remove_audioDatа: remove_audioDatа,
 
   getAll_operator: getAll_operator,
   getSingle_operator: getSingle_operator,
   create_operator: create_operator,
   update_operator: update_operator,
-  remove_operator: remove_operator
+  remove_operator: remove_operator,
 
   getAll_regPoint: getAll_regPoint,
   getSingle_regPoint: getSingle_regPoint,
   create_regPoint: create_regPoint,
   update_regPoint: update_regPoint,
-  remove_regPoint: remove_regPoint
+  remove_regPoint: remove_regPoint,
 
   getAll_opRule: getAll_opRule,
   getSingle_opRule: getSingle_opRule,
   create_opRule: create_opRule,
   update_opRule: update_opRule,
-  remove_opRule: remove_opRule
+  remove_opRule: remove_opRule,
 
   getAll_Contact: getAll_Contact,
   getSingle_Contact: getSingle_Contact,
   create_Contact: create_Contact,
   update_Contact: update_Contact,
-  remove_Contact: remove_Contact
+  remove_Contact: remove_Contact,
 
   getAll_Agent: getAll_Agent,
   getSingle_Agent: getSingle_Agent,
   create_Agent: create_Agent,
   update_Agent: update_Agent,
-  remove_Agent: remove_Agent
+  remove_Agent: remove_Agent,
 
   getAll_access: getAll_access,
   getSingle_access: getSingle_access,
   create_access: create_access,
   update_access: update_access,
-  remove_access: remove_access
+  remove_access: remove_access,
 
   getAll_docImage: getAll_docImage,
   getSingle_docImage: getSingle_docImage,
   create_docImage: create_docImage,
   update_docImage: update_docImage,
-  remove_docImage: remove_docImage
+  remove_docImage: remove_docImage,
 
   getAll_ref: getAll_ref,
   getSingle_ref: getSingle_ref,

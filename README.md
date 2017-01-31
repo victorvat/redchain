@@ -1,5 +1,7 @@
 # redchain
-The Red Chain project
+/* ---------------------------- */
+/*   The Red Chain project      */
+/* ---------------------------- */
 
 
 Steps to make redchain working:

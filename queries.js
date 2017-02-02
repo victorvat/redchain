@@ -14,13 +14,13 @@ var db = pgp(connectionString);
 
 // --------------------------------------------------------- 
 //  The function retrieves data from docSpec
-//  URL : GET /redchain/docSpec/?cSpec=...
+//  URL : GET /redchain/api/docSpec/?cSpec=...
 //  BODY: without BODY !!!
 // ---------------------------------------------------------
 function getSingle_docSpec(req, res, next) {
     var errStr = '';
     if(!req.query.cSpec)
-        errStr += 'cSpec undefined!';
+        errStr += 'cSpec undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -42,22 +42,13 @@ function getSingle_docSpec(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function insert data into docSpec
-//  URL : POST /redchain/docSpec
+//  URL : POST /redchain/api/docSpec
 //  BODY: spec=...&spec_en=...
 // ---------------------------------------------------------
 function create_docSpec(req, res, next) {
-    var errStr = '';
-    if(!req.body.cSpec)
-        errStr += 'cSpec undefined!';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
-    }
-
     db.one('insert into docSpec(spec,spec_en)' +
-           'values(${spec},${spec_en}) returning cSpec',
-            req.body)
+            'values(${spec},${spec_en}) returning cSpec',
+             req.body)
         .then(function (data) {
             res.status(200)
                 .json({
@@ -73,13 +64,13 @@ function create_docSpec(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function update data in docSpec
-//  URL : PUT /redchain/docSpec
+//  URL : PUT /redchain/api/docSpec
 //  BODY: cSpec=...&spec=...&spec_en=...
 // ---------------------------------------------------------
 function update_docSpec(req, res, next) {
     var errStr = '';
     if(!req.body.cSpec)
-        errStr += 'cSpec undefined!';
+        errStr += 'cSpec undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -102,13 +93,13 @@ function update_docSpec(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function deletes data from docSpec
-//  URL : DELETE /redchain/docSpec/
+//  URL : DELETE /redchain/api/docSpec/
 //  BODY: cSpec=...
 // ---------------------------------------------------------
 function remove_docSpec(req, res, next) {
     var errStr = '';
     if(!req.body.cSpec)
-        errStr += 'cSpec undefined!';
+        errStr += 'cSpec undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -132,13 +123,13 @@ function remove_docSpec(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function retrieves data from doc
-//  URL : GET /redchain/doc/?cDoc=...
+//  URL : GET /redchain/api/doc/?cDoc=...
 //  BODY: without BODY !!!
 // ---------------------------------------------------------
 function getSingle_doc(req, res, next) {
     var errStr = '';
     if(!req.query.cDoc)
-        errStr += 'cDoc undefined!';
+        errStr += 'cDoc undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -160,22 +151,13 @@ function getSingle_doc(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function insert data into doc
-//  URL : POST /redchain/doc
+//  URL : POST /redchain/api/doc
 //  BODY: cSpec=...&pId=...&cState=...&docN=...&docDate=...&docEnd=...&docAuth=...&Memo=...
 // ---------------------------------------------------------
 function create_doc(req, res, next) {
-    var errStr = '';
-    if(!req.body.cDoc)
-        errStr += 'cDoc undefined!';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
-    }
-
     db.one('insert into doc(cSpec,pId,cState,docN,docDate,docEnd,docAuth,Memo)' +
-           'values(${cSpec},${pId},${cState},${docN},${docDate},${docEnd},${docAuth},${Memo}) returning cDoc',
-            req.body)
+            'values(${cSpec},${pId},${cState},${docN},${docDate},${docEnd},${docAuth},${Memo}) returning cDoc',
+             req.body)
         .then(function (data) {
             res.status(200)
                 .json({
@@ -191,13 +173,13 @@ function create_doc(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function update data in doc
-//  URL : PUT /redchain/doc
+//  URL : PUT /redchain/api/doc
 //  BODY: cDoc=...&cSpec=...&pId=...&cState=...&docN=...&docDate=...&docEnd=...&docAuth=...&Memo=...
 // ---------------------------------------------------------
 function update_doc(req, res, next) {
     var errStr = '';
     if(!req.body.cDoc)
-        errStr += 'cDoc undefined!';
+        errStr += 'cDoc undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -220,13 +202,13 @@ function update_doc(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function deletes data from doc
-//  URL : DELETE /redchain/doc/
+//  URL : DELETE /redchain/api/doc/
 //  BODY: cDoc=...
 // ---------------------------------------------------------
 function remove_doc(req, res, next) {
     var errStr = '';
     if(!req.body.cDoc)
-        errStr += 'cDoc undefined!';
+        errStr += 'cDoc undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -250,13 +232,13 @@ function remove_doc(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function retrieves data from State
-//  URL : GET /redchain/State/?cState=...
+//  URL : GET /redchain/api/State/?cState=...
 //  BODY: without BODY !!!
 // ---------------------------------------------------------
 function getSingle_State(req, res, next) {
     var errStr = '';
     if(!req.query.cState)
-        errStr += 'cState undefined!';
+        errStr += 'cState undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -278,22 +260,13 @@ function getSingle_State(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function insert data into State
-//  URL : POST /redchain/State
+//  URL : POST /redchain/api/State
 //  BODY: State=...&State_en=...
 // ---------------------------------------------------------
 function create_State(req, res, next) {
-    var errStr = '';
-    if(!req.body.cState)
-        errStr += 'cState undefined!';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
-    }
-
     db.one('insert into State(State,State_en)' +
-           'values(${State},${State_en}) returning cState',
-            req.body)
+            'values(${State},${State_en}) returning cState',
+             req.body)
         .then(function (data) {
             res.status(200)
                 .json({
@@ -309,13 +282,13 @@ function create_State(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function update data in State
-//  URL : PUT /redchain/State
+//  URL : PUT /redchain/api/State
 //  BODY: cState=...&State=...&State_en=...
 // ---------------------------------------------------------
 function update_State(req, res, next) {
     var errStr = '';
     if(!req.body.cState)
-        errStr += 'cState undefined!';
+        errStr += 'cState undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -338,13 +311,13 @@ function update_State(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function deletes data from State
-//  URL : DELETE /redchain/State/
+//  URL : DELETE /redchain/api/State/
 //  BODY: cState=...
 // ---------------------------------------------------------
 function remove_State(req, res, next) {
     var errStr = '';
     if(!req.body.cState)
-        errStr += 'cState undefined!';
+        errStr += 'cState undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -368,13 +341,13 @@ function remove_State(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function retrieves data from person
-//  URL : GET /redchain/person/?pId=...
+//  URL : GET /redchain/api/person/?pId=...
 //  BODY: without BODY !!!
 // ---------------------------------------------------------
 function getSingle_person(req, res, next) {
     var errStr = '';
     if(!req.query.pId)
-        errStr += 'pId undefined!';
+        errStr += 'pId undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -396,22 +369,21 @@ function getSingle_person(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function insert data into person
-//  URL : POST /redchain/person
+//  URL : POST /redchain/api/person
 //  BODY: pId=...&cState=...&shortName=...&fullName=...&legalName=...&bornDate=...&sexId=...
 // ---------------------------------------------------------
 function create_person(req, res, next) {
     var errStr = '';
     if(!req.body.pId)
-        errStr += 'pId undefined!';
+        errStr += 'pId undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
         return;
     }
-
     db.none('insert into person(pId,cState,shortName,fullName,legalName,bornDate,sexId)' +
-           'values(${pId},${cState},${shortName},${fullName},${legalName},${bornDate},${sexId})',
-            req.body)
+            'values(${pId},${cState},${shortName},${fullName},${legalName},${bornDate},${sexId})',
+             req.body)
         .then(function () {
             res.status(200)
                 .json({
@@ -426,13 +398,13 @@ function create_person(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function update data in person
-//  URL : PUT /redchain/person
+//  URL : PUT /redchain/api/person
 //  BODY: pId=...&cState=...&shortName=...&fullName=...&legalName=...&bornDate=...&sexId=...
 // ---------------------------------------------------------
 function update_person(req, res, next) {
     var errStr = '';
     if(!req.body.pId)
-        errStr += 'pId undefined!';
+        errStr += 'pId undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -455,13 +427,13 @@ function update_person(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function deletes data from person
-//  URL : DELETE /redchain/person/
+//  URL : DELETE /redchain/api/person/
 //  BODY: pId=...
 // ---------------------------------------------------------
 function remove_person(req, res, next) {
     var errStr = '';
     if(!req.body.pId)
-        errStr += 'pId undefined!';
+        errStr += 'pId undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -485,13 +457,13 @@ function remove_person(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function retrieves data from photoData
-//  URL : GET /redchain/photoData/?pId=...
+//  URL : GET /redchain/api/photoData/?pId=...
 //  BODY: without BODY !!!
 // ---------------------------------------------------------
 function getSingle_photoData(req, res, next) {
     var errStr = '';
     if(!req.query.pId)
-        errStr += 'pId undefined!';
+        errStr += 'pId undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -513,22 +485,21 @@ function getSingle_photoData(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function insert data into photoData
-//  URL : POST /redchain/photoData
+//  URL : POST /redchain/api/photoData
 //  BODY: pId=...&cPhoto=...&photo=...
 // ---------------------------------------------------------
 function create_photoData(req, res, next) {
     var errStr = '';
     if(!req.body.pId)
-        errStr += 'pId undefined!';
+        errStr += 'pId undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
         return;
     }
-
     db.none('insert into photoData(pId,cPhoto,photo)' +
-           'values(${pId},${cPhoto},${photo})',
-            req.body)
+            'values(${pId},${cPhoto},${photo})',
+             req.body)
         .then(function () {
             res.status(200)
                 .json({
@@ -543,13 +514,13 @@ function create_photoData(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function update data in photoData
-//  URL : PUT /redchain/photoData
+//  URL : PUT /redchain/api/photoData
 //  BODY: pId=...&cPhoto=...&photo=...
 // ---------------------------------------------------------
 function update_photoData(req, res, next) {
     var errStr = '';
     if(!req.body.pId)
-        errStr += 'pId undefined!';
+        errStr += 'pId undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -572,13 +543,13 @@ function update_photoData(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function deletes data from photoData
-//  URL : DELETE /redchain/photoData/
+//  URL : DELETE /redchain/api/photoData/
 //  BODY: pId=...
 // ---------------------------------------------------------
 function remove_photoData(req, res, next) {
     var errStr = '';
     if(!req.body.pId)
-        errStr += 'pId undefined!';
+        errStr += 'pId undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -602,13 +573,13 @@ function remove_photoData(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function retrieves data from photoSpec
-//  URL : GET /redchain/photoSpec/?cPhoto=...
+//  URL : GET /redchain/api/photoSpec/?cPhoto=...
 //  BODY: without BODY !!!
 // ---------------------------------------------------------
 function getSingle_photoSpec(req, res, next) {
     var errStr = '';
     if(!req.query.cPhoto)
-        errStr += 'cPhoto undefined!';
+        errStr += 'cPhoto undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -630,22 +601,13 @@ function getSingle_photoSpec(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function insert data into photoSpec
-//  URL : POST /redchain/photoSpec
+//  URL : POST /redchain/api/photoSpec
 //  BODY: photoSpec=...
 // ---------------------------------------------------------
 function create_photoSpec(req, res, next) {
-    var errStr = '';
-    if(!req.body.cPhoto)
-        errStr += 'cPhoto undefined!';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
-    }
-
     db.one('insert into photoSpec(photoSpec)' +
-           'values(${photoSpec}) returning cPhoto',
-            req.body)
+            'values(${photoSpec}) returning cPhoto',
+             req.body)
         .then(function (data) {
             res.status(200)
                 .json({
@@ -661,13 +623,13 @@ function create_photoSpec(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function update data in photoSpec
-//  URL : PUT /redchain/photoSpec
+//  URL : PUT /redchain/api/photoSpec
 //  BODY: cPhoto=...&photoSpec=...
 // ---------------------------------------------------------
 function update_photoSpec(req, res, next) {
     var errStr = '';
     if(!req.body.cPhoto)
-        errStr += 'cPhoto undefined!';
+        errStr += 'cPhoto undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -690,13 +652,13 @@ function update_photoSpec(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function deletes data from photoSpec
-//  URL : DELETE /redchain/photoSpec/
+//  URL : DELETE /redchain/api/photoSpec/
 //  BODY: cPhoto=...
 // ---------------------------------------------------------
 function remove_photoSpec(req, res, next) {
     var errStr = '';
     if(!req.body.cPhoto)
-        errStr += 'cPhoto undefined!';
+        errStr += 'cPhoto undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -720,13 +682,13 @@ function remove_photoSpec(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function retrieves data from audioDatа
-//  URL : GET /redchain/audioDatа/?pId=...
+//  URL : GET /redchain/api/audioDatа/?pId=...
 //  BODY: without BODY !!!
 // ---------------------------------------------------------
 function getSingle_audioDatа(req, res, next) {
     var errStr = '';
     if(!req.query.pId)
-        errStr += 'pId undefined!';
+        errStr += 'pId undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -748,22 +710,21 @@ function getSingle_audioDatа(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function insert data into audioDatа
-//  URL : POST /redchain/audioDatа
+//  URL : POST /redchain/api/audioDatа
 //  BODY: pId=...&audioFull=...&audioMemo=...&Memo=...
 // ---------------------------------------------------------
 function create_audioDatа(req, res, next) {
     var errStr = '';
     if(!req.body.pId)
-        errStr += 'pId undefined!';
+        errStr += 'pId undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
         return;
     }
-
     db.none('insert into audioDatа(pId,audioFull,audioMemo,Memo)' +
-           'values(${pId},${audioFull},${audioMemo},${Memo})',
-            req.body)
+            'values(${pId},${audioFull},${audioMemo},${Memo})',
+             req.body)
         .then(function () {
             res.status(200)
                 .json({
@@ -778,13 +739,13 @@ function create_audioDatа(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function update data in audioDatа
-//  URL : PUT /redchain/audioDatа
+//  URL : PUT /redchain/api/audioDatа
 //  BODY: pId=...&audioFull=...&audioMemo=...&Memo=...
 // ---------------------------------------------------------
 function update_audioDatа(req, res, next) {
     var errStr = '';
     if(!req.body.pId)
-        errStr += 'pId undefined!';
+        errStr += 'pId undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -807,13 +768,13 @@ function update_audioDatа(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function deletes data from audioDatа
-//  URL : DELETE /redchain/audioDatа/
+//  URL : DELETE /redchain/api/audioDatа/
 //  BODY: pId=...
 // ---------------------------------------------------------
 function remove_audioDatа(req, res, next) {
     var errStr = '';
     if(!req.body.pId)
-        errStr += 'pId undefined!';
+        errStr += 'pId undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -837,13 +798,13 @@ function remove_audioDatа(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function retrieves data from operator
-//  URL : GET /redchain/operator/?cOper=...
+//  URL : GET /redchain/api/operator/?cOper=...
 //  BODY: without BODY !!!
 // ---------------------------------------------------------
 function getSingle_operator(req, res, next) {
     var errStr = '';
     if(!req.query.cOper)
-        errStr += 'cOper undefined!';
+        errStr += 'cOper undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -865,22 +826,13 @@ function getSingle_operator(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function insert data into operator
-//  URL : POST /redchain/operator
+//  URL : POST /redchain/api/operator
 //  BODY: cRule=...&cPoint=...&Stuff=...&Stuff_en=...&key=...&phrase=...&stateId=...
 // ---------------------------------------------------------
 function create_operator(req, res, next) {
-    var errStr = '';
-    if(!req.body.cOper)
-        errStr += 'cOper undefined!';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
-    }
-
     db.one('insert into operator(cRule,cPoint,Stuff,Stuff_en,key,phrase,stateId)' +
-           'values(${cRule},${cPoint},${Stuff},${Stuff_en},${key},${phrase},${stateId}) returning cOper',
-            req.body)
+            'values(${cRule},${cPoint},${Stuff},${Stuff_en},${key},${phrase},${stateId}) returning cOper',
+             req.body)
         .then(function (data) {
             res.status(200)
                 .json({
@@ -896,13 +848,13 @@ function create_operator(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function update data in operator
-//  URL : PUT /redchain/operator
+//  URL : PUT /redchain/api/operator
 //  BODY: cOper=...&cRule=...&cPoint=...&Stuff=...&Stuff_en=...&key=...&phrase=...&stateId=...
 // ---------------------------------------------------------
 function update_operator(req, res, next) {
     var errStr = '';
     if(!req.body.cOper)
-        errStr += 'cOper undefined!';
+        errStr += 'cOper undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -925,13 +877,13 @@ function update_operator(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function deletes data from operator
-//  URL : DELETE /redchain/operator/
+//  URL : DELETE /redchain/api/operator/
 //  BODY: cOper=...
 // ---------------------------------------------------------
 function remove_operator(req, res, next) {
     var errStr = '';
     if(!req.body.cOper)
-        errStr += 'cOper undefined!';
+        errStr += 'cOper undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -955,13 +907,13 @@ function remove_operator(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function retrieves data from regPoint
-//  URL : GET /redchain/regPoint/?cPoint=...
+//  URL : GET /redchain/api/regPoint/?cPoint=...
 //  BODY: without BODY !!!
 // ---------------------------------------------------------
 function getSingle_regPoint(req, res, next) {
     var errStr = '';
     if(!req.query.cPoint)
-        errStr += 'cPoint undefined!';
+        errStr += 'cPoint undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -983,22 +935,13 @@ function getSingle_regPoint(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function insert data into regPoint
-//  URL : POST /redchain/regPoint
+//  URL : POST /redchain/api/regPoint
 //  BODY: cState=...&point=...&point_en=...&location=...&location_en=...
 // ---------------------------------------------------------
 function create_regPoint(req, res, next) {
-    var errStr = '';
-    if(!req.body.cPoint)
-        errStr += 'cPoint undefined!';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
-    }
-
     db.one('insert into regPoint(cState,point,point_en,location,location_en)' +
-           'values(${cState},${point},${point_en},${location},${location_en}) returning cPoint',
-            req.body)
+            'values(${cState},${point},${point_en},${location},${location_en}) returning cPoint',
+             req.body)
         .then(function (data) {
             res.status(200)
                 .json({
@@ -1014,13 +957,13 @@ function create_regPoint(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function update data in regPoint
-//  URL : PUT /redchain/regPoint
+//  URL : PUT /redchain/api/regPoint
 //  BODY: cPoint=...&cState=...&point=...&point_en=...&location=...&location_en=...
 // ---------------------------------------------------------
 function update_regPoint(req, res, next) {
     var errStr = '';
     if(!req.body.cPoint)
-        errStr += 'cPoint undefined!';
+        errStr += 'cPoint undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -1043,13 +986,13 @@ function update_regPoint(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function deletes data from regPoint
-//  URL : DELETE /redchain/regPoint/
+//  URL : DELETE /redchain/api/regPoint/
 //  BODY: cPoint=...
 // ---------------------------------------------------------
 function remove_regPoint(req, res, next) {
     var errStr = '';
     if(!req.body.cPoint)
-        errStr += 'cPoint undefined!';
+        errStr += 'cPoint undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -1073,13 +1016,13 @@ function remove_regPoint(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function retrieves data from opRule
-//  URL : GET /redchain/opRule/?cRule=...
+//  URL : GET /redchain/api/opRule/?cRule=...
 //  BODY: without BODY !!!
 // ---------------------------------------------------------
 function getSingle_opRule(req, res, next) {
     var errStr = '';
     if(!req.query.cRule)
-        errStr += 'cRule undefined!';
+        errStr += 'cRule undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -1101,22 +1044,13 @@ function getSingle_opRule(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function insert data into opRule
-//  URL : POST /redchain/opRule
+//  URL : POST /redchain/api/opRule
 //  BODY: Rule=...&Rule_en=...
 // ---------------------------------------------------------
 function create_opRule(req, res, next) {
-    var errStr = '';
-    if(!req.body.cRule)
-        errStr += 'cRule undefined!';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
-    }
-
     db.one('insert into opRule(Rule,Rule_en)' +
-           'values(${Rule},${Rule_en}) returning cRule',
-            req.body)
+            'values(${Rule},${Rule_en}) returning cRule',
+             req.body)
         .then(function (data) {
             res.status(200)
                 .json({
@@ -1132,13 +1066,13 @@ function create_opRule(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function update data in opRule
-//  URL : PUT /redchain/opRule
+//  URL : PUT /redchain/api/opRule
 //  BODY: cRule=...&Rule=...&Rule_en=...
 // ---------------------------------------------------------
 function update_opRule(req, res, next) {
     var errStr = '';
     if(!req.body.cRule)
-        errStr += 'cRule undefined!';
+        errStr += 'cRule undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -1161,13 +1095,13 @@ function update_opRule(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function deletes data from opRule
-//  URL : DELETE /redchain/opRule/
+//  URL : DELETE /redchain/api/opRule/
 //  BODY: cRule=...
 // ---------------------------------------------------------
 function remove_opRule(req, res, next) {
     var errStr = '';
     if(!req.body.cRule)
-        errStr += 'cRule undefined!';
+        errStr += 'cRule undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -1191,13 +1125,13 @@ function remove_opRule(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function retrieves data from Contact
-//  URL : GET /redchain/Contact/?cContact=...
+//  URL : GET /redchain/api/Contact/?cContact=...
 //  BODY: without BODY !!!
 // ---------------------------------------------------------
 function getSingle_Contact(req, res, next) {
     var errStr = '';
     if(!req.query.cContact)
-        errStr += 'cContact undefined!';
+        errStr += 'cContact undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -1219,22 +1153,13 @@ function getSingle_Contact(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function insert data into Contact
-//  URL : POST /redchain/Contact
+//  URL : POST /redchain/api/Contact
 //  BODY: cAgent=...&pId=...&key=...&phrase=...&Memo=...&stateId=...
 // ---------------------------------------------------------
 function create_Contact(req, res, next) {
-    var errStr = '';
-    if(!req.body.cContact)
-        errStr += 'cContact undefined!';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
-    }
-
     db.one('insert into Contact(cAgent,pId,key,phrase,Memo,stateId)' +
-           'values(${cAgent},${pId},${key},${phrase},${Memo},${stateId}) returning cContact',
-            req.body)
+            'values(${cAgent},${pId},${key},${phrase},${Memo},${stateId}) returning cContact',
+             req.body)
         .then(function (data) {
             res.status(200)
                 .json({
@@ -1250,13 +1175,13 @@ function create_Contact(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function update data in Contact
-//  URL : PUT /redchain/Contact
+//  URL : PUT /redchain/api/Contact
 //  BODY: cContact=...&cAgent=...&pId=...&key=...&phrase=...&Memo=...&stateId=...
 // ---------------------------------------------------------
 function update_Contact(req, res, next) {
     var errStr = '';
     if(!req.body.cContact)
-        errStr += 'cContact undefined!';
+        errStr += 'cContact undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -1279,13 +1204,13 @@ function update_Contact(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function deletes data from Contact
-//  URL : DELETE /redchain/Contact/
+//  URL : DELETE /redchain/api/Contact/
 //  BODY: cContact=...
 // ---------------------------------------------------------
 function remove_Contact(req, res, next) {
     var errStr = '';
     if(!req.body.cContact)
-        errStr += 'cContact undefined!';
+        errStr += 'cContact undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -1309,13 +1234,13 @@ function remove_Contact(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function retrieves data from Agent
-//  URL : GET /redchain/Agent/?cAgent=...
+//  URL : GET /redchain/api/Agent/?cAgent=...
 //  BODY: without BODY !!!
 // ---------------------------------------------------------
 function getSingle_Agent(req, res, next) {
     var errStr = '';
     if(!req.query.cAgent)
-        errStr += 'cAgent undefined!';
+        errStr += 'cAgent undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -1337,22 +1262,13 @@ function getSingle_Agent(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function insert data into Agent
-//  URL : POST /redchain/Agent
+//  URL : POST /redchain/api/Agent
 //  BODY: Agent=...&Memo=...
 // ---------------------------------------------------------
 function create_Agent(req, res, next) {
-    var errStr = '';
-    if(!req.body.cAgent)
-        errStr += 'cAgent undefined!';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
-    }
-
     db.one('insert into Agent(Agent,Memo)' +
-           'values(${Agent},${Memo}) returning cAgent',
-            req.body)
+            'values(${Agent},${Memo}) returning cAgent',
+             req.body)
         .then(function (data) {
             res.status(200)
                 .json({
@@ -1368,13 +1284,13 @@ function create_Agent(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function update data in Agent
-//  URL : PUT /redchain/Agent
+//  URL : PUT /redchain/api/Agent
 //  BODY: cAgent=...&Agent=...&Memo=...
 // ---------------------------------------------------------
 function update_Agent(req, res, next) {
     var errStr = '';
     if(!req.body.cAgent)
-        errStr += 'cAgent undefined!';
+        errStr += 'cAgent undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -1397,13 +1313,13 @@ function update_Agent(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function deletes data from Agent
-//  URL : DELETE /redchain/Agent/
+//  URL : DELETE /redchain/api/Agent/
 //  BODY: cAgent=...
 // ---------------------------------------------------------
 function remove_Agent(req, res, next) {
     var errStr = '';
     if(!req.body.cAgent)
-        errStr += 'cAgent undefined!';
+        errStr += 'cAgent undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -1427,15 +1343,15 @@ function remove_Agent(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function retrieves data from access
-//  URL : GET /redchain/access/?cOper=...&pId=...
+//  URL : GET /redchain/api/access/?cOper=...&pId=...
 //  BODY: without BODY !!!
 // ---------------------------------------------------------
 function getSingle_access(req, res, next) {
     var errStr = '';
     if(!req.query.cOper)
-        errStr += 'cOper undefined!';
+        errStr += 'cOper undefined! ';
     if(!req.query.pId)
-        errStr += 'pId undefined!';
+        errStr += 'pId undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -1457,24 +1373,23 @@ function getSingle_access(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function insert data into access
-//  URL : POST /redchain/access
+//  URL : POST /redchain/api/access
 //  BODY: cOper=...&pId=...&stateId=...
 // ---------------------------------------------------------
 function create_access(req, res, next) {
     var errStr = '';
     if(!req.body.cOper)
-        errStr += 'cOper undefined!';
+        errStr += 'cOper undefined! ';
     if(!req.body.pId)
-        errStr += 'pId undefined!';
+        errStr += 'pId undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
         return;
     }
-
     db.none('insert into access(cOper,pId,stateId)' +
-           'values(${cOper},${pId},${stateId})',
-            req.body)
+            'values(${cOper},${pId},${stateId})',
+             req.body)
         .then(function () {
             res.status(200)
                 .json({
@@ -1489,15 +1404,15 @@ function create_access(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function update data in access
-//  URL : PUT /redchain/access
+//  URL : PUT /redchain/api/access
 //  BODY: cOper=...&pId=...&stateId=...
 // ---------------------------------------------------------
 function update_access(req, res, next) {
     var errStr = '';
     if(!req.body.cOper)
-        errStr += 'cOper undefined!';
+        errStr += 'cOper undefined! ';
     if(!req.body.pId)
-        errStr += 'pId undefined!';
+        errStr += 'pId undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -1520,15 +1435,15 @@ function update_access(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function deletes data from access
-//  URL : DELETE /redchain/access/
+//  URL : DELETE /redchain/api/access/
 //  BODY: cOper=...&pId=...
 // ---------------------------------------------------------
 function remove_access(req, res, next) {
     var errStr = '';
     if(!req.body.cOper)
-        errStr += 'cOper undefined!';
+        errStr += 'cOper undefined! ';
     if(!req.body.pId)
-        errStr += 'pId undefined!';
+        errStr += 'pId undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -1552,13 +1467,13 @@ function remove_access(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function retrieves data from docImage
-//  URL : GET /redchain/docImage/?pageN=...
+//  URL : GET /redchain/api/docImage/?pageN=...
 //  BODY: without BODY !!!
 // ---------------------------------------------------------
 function getSingle_docImage(req, res, next) {
     var errStr = '';
     if(!req.query.pageN)
-        errStr += 'pageN undefined!';
+        errStr += 'pageN undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -1580,22 +1495,21 @@ function getSingle_docImage(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function insert data into docImage
-//  URL : POST /redchain/docImage
+//  URL : POST /redchain/api/docImage
 //  BODY: pageN=...&cDoc=...&image=...
 // ---------------------------------------------------------
 function create_docImage(req, res, next) {
     var errStr = '';
     if(!req.body.pageN)
-        errStr += 'pageN undefined!';
+        errStr += 'pageN undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
         return;
     }
-
     db.none('insert into docImage(pageN,cDoc,image)' +
-           'values(${pageN},${cDoc},${image})',
-            req.body)
+            'values(${pageN},${cDoc},${image})',
+             req.body)
         .then(function () {
             res.status(200)
                 .json({
@@ -1610,13 +1524,13 @@ function create_docImage(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function update data in docImage
-//  URL : PUT /redchain/docImage
+//  URL : PUT /redchain/api/docImage
 //  BODY: pageN=...&cDoc=...&image=...
 // ---------------------------------------------------------
 function update_docImage(req, res, next) {
     var errStr = '';
     if(!req.body.pageN)
-        errStr += 'pageN undefined!';
+        errStr += 'pageN undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -1639,13 +1553,13 @@ function update_docImage(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function deletes data from docImage
-//  URL : DELETE /redchain/docImage/
+//  URL : DELETE /redchain/api/docImage/
 //  BODY: pageN=...
 // ---------------------------------------------------------
 function remove_docImage(req, res, next) {
     var errStr = '';
     if(!req.body.pageN)
-        errStr += 'pageN undefined!';
+        errStr += 'pageN undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -1669,15 +1583,15 @@ function remove_docImage(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function retrieves data from ref
-//  URL : GET /redchain/ref/?pId=...&per_pId=...
+//  URL : GET /redchain/api/ref/?pId=...&per_pId=...
 //  BODY: without BODY !!!
 // ---------------------------------------------------------
 function getSingle_ref(req, res, next) {
     var errStr = '';
     if(!req.query.pId)
-        errStr += 'pId undefined!';
+        errStr += 'pId undefined! ';
     if(!req.query.per_pId)
-        errStr += 'per_pId undefined!';
+        errStr += 'per_pId undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -1699,24 +1613,23 @@ function getSingle_ref(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function insert data into ref
-//  URL : POST /redchain/ref
+//  URL : POST /redchain/api/ref
 //  BODY: pId=...&per_pId=...&Memo=...
 // ---------------------------------------------------------
 function create_ref(req, res, next) {
     var errStr = '';
     if(!req.body.pId)
-        errStr += 'pId undefined!';
+        errStr += 'pId undefined! ';
     if(!req.body.per_pId)
-        errStr += 'per_pId undefined!';
+        errStr += 'per_pId undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
         return;
     }
-
     db.none('insert into ref(pId,per_pId,Memo)' +
-           'values(${pId},${per_pId},${Memo})',
-            req.body)
+            'values(${pId},${per_pId},${Memo})',
+             req.body)
         .then(function () {
             res.status(200)
                 .json({
@@ -1731,15 +1644,15 @@ function create_ref(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function update data in ref
-//  URL : PUT /redchain/ref
+//  URL : PUT /redchain/api/ref
 //  BODY: pId=...&per_pId=...&Memo=...
 // ---------------------------------------------------------
 function update_ref(req, res, next) {
     var errStr = '';
     if(!req.body.pId)
-        errStr += 'pId undefined!';
+        errStr += 'pId undefined! ';
     if(!req.body.per_pId)
-        errStr += 'per_pId undefined!';
+        errStr += 'per_pId undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));
@@ -1762,15 +1675,15 @@ function update_ref(req, res, next) {
 
 // --------------------------------------------------------- 
 //  The function deletes data from ref
-//  URL : DELETE /redchain/ref/
+//  URL : DELETE /redchain/api/ref/
 //  BODY: pId=...&per_pId=...
 // ---------------------------------------------------------
 function remove_ref(req, res, next) {
     var errStr = '';
     if(!req.body.pId)
-        errStr += 'pId undefined!';
+        errStr += 'pId undefined! ';
     if(!req.body.per_pId)
-        errStr += 'per_pId undefined!';
+        errStr += 'per_pId undefined! ';
     if (errStr.length > 0)
     {
         next(new Error(errStr));

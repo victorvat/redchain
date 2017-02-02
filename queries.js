@@ -51,13 +51,14 @@ function create_docSpec(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('insert into docSpec(cSpec,spec,spec_en' +
-            'values(${cSpec},${spec},${spec_en})',
+    db.one('insert into docSpec(spec,spec_en)' +
+           'values(${spec},${spec_en}) returning cSpec',
             req.body)
-        .then(function () {
+        .then(function (data) {
             res.status(200)
                 .json({
                     status: 'success',
+                    data: data,
                     message: 'Inserted one docSpec'
                 });
         })
@@ -80,8 +81,8 @@ function update_docSpec(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('update docSpec set cSpec=$1, spec=$2, spec_en=$3 where cSpec=$4',
-            req.body.cSpec, req.body.spec, req.body.spec_en,
+    db.none('update docSpec set spec=$1,spec_en=$2 where cSpec=$3',
+            req.body.spec,req.body.spec_en,
             req.body.cSpec)
         .then(function () {
             res.status(200)
@@ -167,13 +168,14 @@ function create_doc(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('insert into doc(cDoc,cSpec,pId,cState,docN,docDate,docEnd,docAuth,Memo' +
-            'values(${cDoc},${cSpec},${pId},${cState},${docN},${docDate},${docEnd},${docAuth},${Memo})',
+    db.one('insert into doc(cSpec,pId,cState,docN,docDate,docEnd,docAuth,Memo)' +
+           'values(${cSpec},${pId},${cState},${docN},${docDate},${docEnd},${docAuth},${Memo}) returning cDoc',
             req.body)
-        .then(function () {
+        .then(function (data) {
             res.status(200)
                 .json({
                     status: 'success',
+                    data: data,
                     message: 'Inserted one doc'
                 });
         })
@@ -196,8 +198,8 @@ function update_doc(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('update doc set cDoc=$1, cSpec=$2, pId=$3, cState=$4, docN=$5, docDate=$6, docEnd=$7, docAuth=$8, Memo=$9 where cDoc=$10',
-            req.body.cDoc, req.body.cSpec, req.body.pId, req.body.cState, req.body.docN, req.body.docDate, req.body.docEnd, req.body.docAuth, req.body.Memo,
+    db.none('update doc set cSpec=$1,pId=$2,cState=$3,docN=$4,docDate=$5,docEnd=$6,docAuth=$7,Memo=$8 where cDoc=$9',
+            req.body.cSpec,req.body.pId,req.body.cState,req.body.docN,req.body.docDate,req.body.docEnd,req.body.docAuth,req.body.Memo,
             req.body.cDoc)
         .then(function () {
             res.status(200)
@@ -283,13 +285,14 @@ function create_State(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('insert into State(cState,State,State_en' +
-            'values(${cState},${State},${State_en})',
+    db.one('insert into State(State,State_en)' +
+           'values(${State},${State_en}) returning cState',
             req.body)
-        .then(function () {
+        .then(function (data) {
             res.status(200)
                 .json({
                     status: 'success',
+                    data: data,
                     message: 'Inserted one State'
                 });
         })
@@ -312,8 +315,8 @@ function update_State(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('update State set cState=$1, State=$2, State_en=$3 where cState=$4',
-            req.body.cState, req.body.State, req.body.State_en,
+    db.none('update State set State=$1,State_en=$2 where cState=$3',
+            req.body.State,req.body.State_en,
             req.body.cState)
         .then(function () {
             res.status(200)
@@ -399,8 +402,8 @@ function create_person(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('insert into person(pId,cState,shortName,fullName,legalName,bornDate,sexId' +
-            'values(${pId},${cState},${shortName},${fullName},${legalName},${bornDate},${sexId})',
+    db.none('insert into person(pId,cState,shortName,fullName,legalName,bornDate,sexId)' +
+           'values(${pId},${cState},${shortName},${fullName},${legalName},${bornDate},${sexId})',
             req.body)
         .then(function () {
             res.status(200)
@@ -428,8 +431,8 @@ function update_person(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('update person set pId=$1, cState=$2, shortName=$3, fullName=$4, legalName=$5, bornDate=$6, sexId=$7 where pId=$8',
-            req.body.pId, req.body.cState, req.body.shortName, req.body.fullName, req.body.legalName, req.body.bornDate, req.body.sexId,
+    db.none('update person set cState=$1,shortName=$2,fullName=$3,legalName=$4,bornDate=$5,sexId=$6 where pId=$7',
+            req.body.cState,req.body.shortName,req.body.fullName,req.body.legalName,req.body.bornDate,req.body.sexId,
             req.body.pId)
         .then(function () {
             res.status(200)
@@ -515,8 +518,8 @@ function create_photoData(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('insert into photoData(pId,cPhoto,photo' +
-            'values(${pId},${cPhoto},${photo})',
+    db.none('insert into photoData(pId,cPhoto,photo)' +
+           'values(${pId},${cPhoto},${photo})',
             req.body)
         .then(function () {
             res.status(200)
@@ -544,8 +547,8 @@ function update_photoData(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('update photoData set pId=$1, cPhoto=$2, photo=$3 where pId=$4',
-            req.body.pId, req.body.cPhoto, req.body.photo,
+    db.none('update photoData set cPhoto=$1,photo=$2 where pId=$3',
+            req.body.cPhoto,req.body.photo,
             req.body.pId)
         .then(function () {
             res.status(200)
@@ -631,13 +634,14 @@ function create_photoSpec(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('insert into photoSpec(cPhoto,photoSpec' +
-            'values(${cPhoto},${photoSpec})',
+    db.one('insert into photoSpec(photoSpec)' +
+           'values(${photoSpec}) returning cPhoto',
             req.body)
-        .then(function () {
+        .then(function (data) {
             res.status(200)
                 .json({
                     status: 'success',
+                    data: data,
                     message: 'Inserted one photoSpec'
                 });
         })
@@ -660,8 +664,8 @@ function update_photoSpec(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('update photoSpec set cPhoto=$1, photoSpec=$2 where cPhoto=$3',
-            req.body.cPhoto, req.body.photoSpec,
+    db.none('update photoSpec set photoSpec=$1 where cPhoto=$2',
+            req.body.photoSpec,
             req.body.cPhoto)
         .then(function () {
             res.status(200)
@@ -747,8 +751,8 @@ function create_audioDatа(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('insert into audioDatа(pId,audioFull,audioMemo,Memo' +
-            'values(${pId},${audioFull},${audioMemo},${Memo})',
+    db.none('insert into audioDatа(pId,audioFull,audioMemo,Memo)' +
+           'values(${pId},${audioFull},${audioMemo},${Memo})',
             req.body)
         .then(function () {
             res.status(200)
@@ -776,8 +780,8 @@ function update_audioDatа(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('update audioDatа set pId=$1, audioFull=$2, audioMemo=$3, Memo=$4 where pId=$5',
-            req.body.pId, req.body.audioFull, req.body.audioMemo, req.body.Memo,
+    db.none('update audioDatа set audioFull=$1,audioMemo=$2,Memo=$3 where pId=$4',
+            req.body.audioFull,req.body.audioMemo,req.body.Memo,
             req.body.pId)
         .then(function () {
             res.status(200)
@@ -863,13 +867,14 @@ function create_operator(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('insert into operator(cOper,cRule,cPoint,Stuff,Stuff_en,key,phrase,stateId' +
-            'values(${cOper},${cRule},${cPoint},${Stuff},${Stuff_en},${key},${phrase},${stateId})',
+    db.one('insert into operator(cRule,cPoint,Stuff,Stuff_en,key,phrase,stateId)' +
+           'values(${cRule},${cPoint},${Stuff},${Stuff_en},${key},${phrase},${stateId}) returning cOper',
             req.body)
-        .then(function () {
+        .then(function (data) {
             res.status(200)
                 .json({
                     status: 'success',
+                    data: data,
                     message: 'Inserted one operator'
                 });
         })
@@ -892,8 +897,8 @@ function update_operator(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('update operator set cOper=$1, cRule=$2, cPoint=$3, Stuff=$4, Stuff_en=$5, key=$6, phrase=$7, stateId=$8 where cOper=$9',
-            req.body.cOper, req.body.cRule, req.body.cPoint, req.body.Stuff, req.body.Stuff_en, req.body.key, req.body.phrase, req.body.stateId,
+    db.none('update operator set cRule=$1,cPoint=$2,Stuff=$3,Stuff_en=$4,key=$5,phrase=$6,stateId=$7 where cOper=$8',
+            req.body.cRule,req.body.cPoint,req.body.Stuff,req.body.Stuff_en,req.body.key,req.body.phrase,req.body.stateId,
             req.body.cOper)
         .then(function () {
             res.status(200)
@@ -979,13 +984,14 @@ function create_regPoint(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('insert into regPoint(cPoint,cState,point,point_en,location,location_en' +
-            'values(${cPoint},${cState},${point},${point_en},${location},${location_en})',
+    db.one('insert into regPoint(cState,point,point_en,location,location_en)' +
+           'values(${cState},${point},${point_en},${location},${location_en}) returning cPoint',
             req.body)
-        .then(function () {
+        .then(function (data) {
             res.status(200)
                 .json({
                     status: 'success',
+                    data: data,
                     message: 'Inserted one regPoint'
                 });
         })
@@ -1008,8 +1014,8 @@ function update_regPoint(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('update regPoint set cPoint=$1, cState=$2, point=$3, point_en=$4, location=$5, location_en=$6 where cPoint=$7',
-            req.body.cPoint, req.body.cState, req.body.point, req.body.point_en, req.body.location, req.body.location_en,
+    db.none('update regPoint set cState=$1,point=$2,point_en=$3,location=$4,location_en=$5 where cPoint=$6',
+            req.body.cState,req.body.point,req.body.point_en,req.body.location,req.body.location_en,
             req.body.cPoint)
         .then(function () {
             res.status(200)
@@ -1095,13 +1101,14 @@ function create_opRule(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('insert into opRule(cRule,Rule,Rule_en' +
-            'values(${cRule},${Rule},${Rule_en})',
+    db.one('insert into opRule(Rule,Rule_en)' +
+           'values(${Rule},${Rule_en}) returning cRule',
             req.body)
-        .then(function () {
+        .then(function (data) {
             res.status(200)
                 .json({
                     status: 'success',
+                    data: data,
                     message: 'Inserted one opRule'
                 });
         })
@@ -1124,8 +1131,8 @@ function update_opRule(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('update opRule set cRule=$1, Rule=$2, Rule_en=$3 where cRule=$4',
-            req.body.cRule, req.body.Rule, req.body.Rule_en,
+    db.none('update opRule set Rule=$1,Rule_en=$2 where cRule=$3',
+            req.body.Rule,req.body.Rule_en,
             req.body.cRule)
         .then(function () {
             res.status(200)
@@ -1211,13 +1218,14 @@ function create_Contact(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('insert into Contact(cContact,cAgent,pId,key,phrase,Memo,stateId' +
-            'values(${cContact},${cAgent},${pId},${key},${phrase},${Memo},${stateId})',
+    db.one('insert into Contact(cAgent,pId,key,phrase,Memo,stateId)' +
+           'values(${cAgent},${pId},${key},${phrase},${Memo},${stateId}) returning cContact',
             req.body)
-        .then(function () {
+        .then(function (data) {
             res.status(200)
                 .json({
                     status: 'success',
+                    data: data,
                     message: 'Inserted one Contact'
                 });
         })
@@ -1240,8 +1248,8 @@ function update_Contact(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('update Contact set cContact=$1, cAgent=$2, pId=$3, key=$4, phrase=$5, Memo=$6, stateId=$7 where cContact=$8',
-            req.body.cContact, req.body.cAgent, req.body.pId, req.body.key, req.body.phrase, req.body.Memo, req.body.stateId,
+    db.none('update Contact set cAgent=$1,pId=$2,key=$3,phrase=$4,Memo=$5,stateId=$6 where cContact=$7',
+            req.body.cAgent,req.body.pId,req.body.key,req.body.phrase,req.body.Memo,req.body.stateId,
             req.body.cContact)
         .then(function () {
             res.status(200)
@@ -1327,13 +1335,14 @@ function create_Agent(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('insert into Agent(cAgent,Agent,Memo' +
-            'values(${cAgent},${Agent},${Memo})',
+    db.one('insert into Agent(Agent,Memo)' +
+           'values(${Agent},${Memo}) returning cAgent',
             req.body)
-        .then(function () {
+        .then(function (data) {
             res.status(200)
                 .json({
                     status: 'success',
+                    data: data,
                     message: 'Inserted one Agent'
                 });
         })
@@ -1356,8 +1365,8 @@ function update_Agent(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('update Agent set cAgent=$1, Agent=$2, Memo=$3 where cAgent=$4',
-            req.body.cAgent, req.body.Agent, req.body.Memo,
+    db.none('update Agent set Agent=$1,Memo=$2 where cAgent=$3',
+            req.body.Agent,req.body.Memo,
             req.body.cAgent)
         .then(function () {
             res.status(200)
@@ -1447,8 +1456,8 @@ function create_access(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('insert into access(cOper,pId,stateId' +
-            'values(${cOper},${pId},${stateId})',
+    db.none('insert into access(cOper,pId,stateId)' +
+           'values(${cOper},${pId},${stateId})',
             req.body)
         .then(function () {
             res.status(200)
@@ -1478,8 +1487,8 @@ function update_access(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('update access set cOper=$1, pId=$2, stateId=$3 where cOper=$4 and pId=$5',
-            req.body.cOper, req.body.pId, req.body.stateId,
+    db.none('update access set stateId=$1 where cOper=$2 and pId=$3',
+            req.body.stateId,
             req.body.cOper, req.body.pId)
         .then(function () {
             res.status(200)
@@ -1567,8 +1576,8 @@ function create_docImage(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('insert into docImage(pageN,cDoc,image' +
-            'values(${pageN},${cDoc},${image})',
+    db.none('insert into docImage(pageN,cDoc,image)' +
+           'values(${pageN},${cDoc},${image})',
             req.body)
         .then(function () {
             res.status(200)
@@ -1596,8 +1605,8 @@ function update_docImage(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('update docImage set pageN=$1, cDoc=$2, image=$3 where pageN=$4',
-            req.body.pageN, req.body.cDoc, req.body.image,
+    db.none('update docImage set cDoc=$1,image=$2 where pageN=$3',
+            req.body.cDoc,req.body.image,
             req.body.pageN)
         .then(function () {
             res.status(200)
@@ -1687,8 +1696,8 @@ function create_ref(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('insert into ref(pId,per_pId,Memo' +
-            'values(${pId},${per_pId},${Memo})',
+    db.none('insert into ref(pId,per_pId,Memo)' +
+           'values(${pId},${per_pId},${Memo})',
             req.body)
         .then(function () {
             res.status(200)
@@ -1718,8 +1727,8 @@ function update_ref(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('update ref set pId=$1, per_pId=$2, Memo=$3 where pId=$4 and per_pId=$5',
-            req.body.pId, req.body.per_pId, req.body.Memo,
+    db.none('update ref set Memo=$1 where pId=$2 and per_pId=$3',
+            req.body.Memo,
             req.body.pId, req.body.per_pId)
         .then(function () {
             res.status(200)
@@ -1840,3 +1849,4 @@ module.exports = {
   update_ref: update_ref,
   remove_ref: remove_ref
 };
+

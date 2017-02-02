@@ -6,7 +6,10 @@ var options = {
 };
 
 var pgp = require('pg-promise')(options);
-var connectionString = 'postgres://user:passwd@localhost:5432/redchain';
+var fs = require('fs');
+var ini = require('ini');
+var config = ini.parse(fs.readFileSync('./config.ini', 'utf-8'))
+var connectionString = config.database.connectionString;
 var db = pgp(connectionString);
 
 // --------------------------------------------------------- 

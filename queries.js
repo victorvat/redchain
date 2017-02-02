@@ -44,7 +44,7 @@ function getSingle_docSpec(req, res, next) {
 // ---------------------------------------------------------
 function create_docSpec(req, res, next) {
     var errStr = '';
-    if(!req.query.cSpec)
+    if(!req.body.cSpec)
         errStr += 'cSpec undefined!';
     if (errStr.length > 0)
     {
@@ -73,7 +73,7 @@ function create_docSpec(req, res, next) {
 // ---------------------------------------------------------
 function update_docSpec(req, res, next) {
     var errStr = '';
-    if(!req.query.cSpec)
+    if(!req.body.cSpec)
         errStr += 'cSpec undefined!';
     if (errStr.length > 0)
     {
@@ -102,7 +102,7 @@ function update_docSpec(req, res, next) {
 // ---------------------------------------------------------
 function remove_docSpec(req, res, next) {
     var errStr = '';
-    if(!req.query.cSpec)
+    if(!req.body.cSpec)
         errStr += 'cSpec undefined!';
     if (errStr.length > 0)
     {
@@ -160,7 +160,7 @@ function getSingle_doc(req, res, next) {
 // ---------------------------------------------------------
 function create_doc(req, res, next) {
     var errStr = '';
-    if(!req.query.cDoc)
+    if(!req.body.cDoc)
         errStr += 'cDoc undefined!';
     if (errStr.length > 0)
     {
@@ -189,7 +189,7 @@ function create_doc(req, res, next) {
 // ---------------------------------------------------------
 function update_doc(req, res, next) {
     var errStr = '';
-    if(!req.query.cDoc)
+    if(!req.body.cDoc)
         errStr += 'cDoc undefined!';
     if (errStr.length > 0)
     {
@@ -218,7 +218,7 @@ function update_doc(req, res, next) {
 // ---------------------------------------------------------
 function remove_doc(req, res, next) {
     var errStr = '';
-    if(!req.query.cDoc)
+    if(!req.body.cDoc)
         errStr += 'cDoc undefined!';
     if (errStr.length > 0)
     {
@@ -276,7 +276,7 @@ function getSingle_State(req, res, next) {
 // ---------------------------------------------------------
 function create_State(req, res, next) {
     var errStr = '';
-    if(!req.query.cState)
+    if(!req.body.cState)
         errStr += 'cState undefined!';
     if (errStr.length > 0)
     {
@@ -305,7 +305,7 @@ function create_State(req, res, next) {
 // ---------------------------------------------------------
 function update_State(req, res, next) {
     var errStr = '';
-    if(!req.query.cState)
+    if(!req.body.cState)
         errStr += 'cState undefined!';
     if (errStr.length > 0)
     {
@@ -334,7 +334,7 @@ function update_State(req, res, next) {
 // ---------------------------------------------------------
 function remove_State(req, res, next) {
     var errStr = '';
-    if(!req.query.cState)
+    if(!req.body.cState)
         errStr += 'cState undefined!';
     if (errStr.length > 0)
     {
@@ -392,7 +392,7 @@ function getSingle_person(req, res, next) {
 // ---------------------------------------------------------
 function create_person(req, res, next) {
     var errStr = '';
-    if(!req.query.pId)
+    if(!req.body.pId)
         errStr += 'pId undefined!';
     if (errStr.length > 0)
     {
@@ -421,7 +421,7 @@ function create_person(req, res, next) {
 // ---------------------------------------------------------
 function update_person(req, res, next) {
     var errStr = '';
-    if(!req.query.pId)
+    if(!req.body.pId)
         errStr += 'pId undefined!';
     if (errStr.length > 0)
     {
@@ -450,7 +450,7 @@ function update_person(req, res, next) {
 // ---------------------------------------------------------
 function remove_person(req, res, next) {
     var errStr = '';
-    if(!req.query.pId)
+    if(!req.body.pId)
         errStr += 'pId undefined!';
     if (errStr.length > 0)
     {
@@ -508,7 +508,7 @@ function getSingle_photoData(req, res, next) {
 // ---------------------------------------------------------
 function create_photoData(req, res, next) {
     var errStr = '';
-    if(!req.query.pId)
+    if(!req.body.pId)
         errStr += 'pId undefined!';
     if (errStr.length > 0)
     {
@@ -537,7 +537,7 @@ function create_photoData(req, res, next) {
 // ---------------------------------------------------------
 function update_photoData(req, res, next) {
     var errStr = '';
-    if(!req.query.pId)
+    if(!req.body.pId)
         errStr += 'pId undefined!';
     if (errStr.length > 0)
     {
@@ -566,7 +566,7 @@ function update_photoData(req, res, next) {
 // ---------------------------------------------------------
 function remove_photoData(req, res, next) {
     var errStr = '';
-    if(!req.query.pId)
+    if(!req.body.pId)
         errStr += 'pId undefined!';
     if (errStr.length > 0)
     {
@@ -624,7 +624,7 @@ function getSingle_photoSpec(req, res, next) {
 // ---------------------------------------------------------
 function create_photoSpec(req, res, next) {
     var errStr = '';
-    if(!req.query.cPhoto)
+    if(!req.body.cPhoto)
         errStr += 'cPhoto undefined!';
     if (errStr.length > 0)
     {
@@ -653,7 +653,7 @@ function create_photoSpec(req, res, next) {
 // ---------------------------------------------------------
 function update_photoSpec(req, res, next) {
     var errStr = '';
-    if(!req.query.cPhoto)
+    if(!req.body.cPhoto)
         errStr += 'cPhoto undefined!';
     if (errStr.length > 0)
     {
@@ -682,7 +682,7 @@ function update_photoSpec(req, res, next) {
 // ---------------------------------------------------------
 function remove_photoSpec(req, res, next) {
     var errStr = '';
-    if(!req.query.cPhoto)
+    if(!req.body.cPhoto)
         errStr += 'cPhoto undefined!';
     if (errStr.length > 0)
     {
@@ -740,7 +740,7 @@ function getSingle_audioDatа(req, res, next) {
 // ---------------------------------------------------------
 function create_audioDatа(req, res, next) {
     var errStr = '';
-    if(!req.query.pId)
+    if(!req.body.pId)
         errStr += 'pId undefined!';
     if (errStr.length > 0)
     {
@@ -769,7 +769,7 @@ function create_audioDatа(req, res, next) {
 // ---------------------------------------------------------
 function update_audioDatа(req, res, next) {
     var errStr = '';
-    if(!req.query.pId)
+    if(!req.body.pId)
         errStr += 'pId undefined!';
     if (errStr.length > 0)
     {
@@ -798,7 +798,7 @@ function update_audioDatа(req, res, next) {
 // ---------------------------------------------------------
 function remove_audioDatа(req, res, next) {
     var errStr = '';
-    if(!req.query.pId)
+    if(!req.body.pId)
         errStr += 'pId undefined!';
     if (errStr.length > 0)
     {
@@ -856,7 +856,7 @@ function getSingle_operator(req, res, next) {
 // ---------------------------------------------------------
 function create_operator(req, res, next) {
     var errStr = '';
-    if(!req.query.cOper)
+    if(!req.body.cOper)
         errStr += 'cOper undefined!';
     if (errStr.length > 0)
     {
@@ -885,7 +885,7 @@ function create_operator(req, res, next) {
 // ---------------------------------------------------------
 function update_operator(req, res, next) {
     var errStr = '';
-    if(!req.query.cOper)
+    if(!req.body.cOper)
         errStr += 'cOper undefined!';
     if (errStr.length > 0)
     {
@@ -914,7 +914,7 @@ function update_operator(req, res, next) {
 // ---------------------------------------------------------
 function remove_operator(req, res, next) {
     var errStr = '';
-    if(!req.query.cOper)
+    if(!req.body.cOper)
         errStr += 'cOper undefined!';
     if (errStr.length > 0)
     {
@@ -972,7 +972,7 @@ function getSingle_regPoint(req, res, next) {
 // ---------------------------------------------------------
 function create_regPoint(req, res, next) {
     var errStr = '';
-    if(!req.query.cPoint)
+    if(!req.body.cPoint)
         errStr += 'cPoint undefined!';
     if (errStr.length > 0)
     {
@@ -1001,7 +1001,7 @@ function create_regPoint(req, res, next) {
 // ---------------------------------------------------------
 function update_regPoint(req, res, next) {
     var errStr = '';
-    if(!req.query.cPoint)
+    if(!req.body.cPoint)
         errStr += 'cPoint undefined!';
     if (errStr.length > 0)
     {
@@ -1030,7 +1030,7 @@ function update_regPoint(req, res, next) {
 // ---------------------------------------------------------
 function remove_regPoint(req, res, next) {
     var errStr = '';
-    if(!req.query.cPoint)
+    if(!req.body.cPoint)
         errStr += 'cPoint undefined!';
     if (errStr.length > 0)
     {
@@ -1088,7 +1088,7 @@ function getSingle_opRule(req, res, next) {
 // ---------------------------------------------------------
 function create_opRule(req, res, next) {
     var errStr = '';
-    if(!req.query.cRule)
+    if(!req.body.cRule)
         errStr += 'cRule undefined!';
     if (errStr.length > 0)
     {
@@ -1117,7 +1117,7 @@ function create_opRule(req, res, next) {
 // ---------------------------------------------------------
 function update_opRule(req, res, next) {
     var errStr = '';
-    if(!req.query.cRule)
+    if(!req.body.cRule)
         errStr += 'cRule undefined!';
     if (errStr.length > 0)
     {
@@ -1146,7 +1146,7 @@ function update_opRule(req, res, next) {
 // ---------------------------------------------------------
 function remove_opRule(req, res, next) {
     var errStr = '';
-    if(!req.query.cRule)
+    if(!req.body.cRule)
         errStr += 'cRule undefined!';
     if (errStr.length > 0)
     {
@@ -1204,7 +1204,7 @@ function getSingle_Contact(req, res, next) {
 // ---------------------------------------------------------
 function create_Contact(req, res, next) {
     var errStr = '';
-    if(!req.query.cContact)
+    if(!req.body.cContact)
         errStr += 'cContact undefined!';
     if (errStr.length > 0)
     {
@@ -1233,7 +1233,7 @@ function create_Contact(req, res, next) {
 // ---------------------------------------------------------
 function update_Contact(req, res, next) {
     var errStr = '';
-    if(!req.query.cContact)
+    if(!req.body.cContact)
         errStr += 'cContact undefined!';
     if (errStr.length > 0)
     {
@@ -1262,7 +1262,7 @@ function update_Contact(req, res, next) {
 // ---------------------------------------------------------
 function remove_Contact(req, res, next) {
     var errStr = '';
-    if(!req.query.cContact)
+    if(!req.body.cContact)
         errStr += 'cContact undefined!';
     if (errStr.length > 0)
     {
@@ -1320,7 +1320,7 @@ function getSingle_Agent(req, res, next) {
 // ---------------------------------------------------------
 function create_Agent(req, res, next) {
     var errStr = '';
-    if(!req.query.cAgent)
+    if(!req.body.cAgent)
         errStr += 'cAgent undefined!';
     if (errStr.length > 0)
     {
@@ -1349,7 +1349,7 @@ function create_Agent(req, res, next) {
 // ---------------------------------------------------------
 function update_Agent(req, res, next) {
     var errStr = '';
-    if(!req.query.cAgent)
+    if(!req.body.cAgent)
         errStr += 'cAgent undefined!';
     if (errStr.length > 0)
     {
@@ -1378,7 +1378,7 @@ function update_Agent(req, res, next) {
 // ---------------------------------------------------------
 function remove_Agent(req, res, next) {
     var errStr = '';
-    if(!req.query.cAgent)
+    if(!req.body.cAgent)
         errStr += 'cAgent undefined!';
     if (errStr.length > 0)
     {
@@ -1438,9 +1438,9 @@ function getSingle_access(req, res, next) {
 // ---------------------------------------------------------
 function create_access(req, res, next) {
     var errStr = '';
-    if(!req.query.cOper)
+    if(!req.body.cOper)
         errStr += 'cOper undefined!';
-    if(!req.query.pId)
+    if(!req.body.pId)
         errStr += 'pId undefined!';
     if (errStr.length > 0)
     {
@@ -1469,9 +1469,9 @@ function create_access(req, res, next) {
 // ---------------------------------------------------------
 function update_access(req, res, next) {
     var errStr = '';
-    if(!req.query.cOper)
+    if(!req.body.cOper)
         errStr += 'cOper undefined!';
-    if(!req.query.pId)
+    if(!req.body.pId)
         errStr += 'pId undefined!';
     if (errStr.length > 0)
     {
@@ -1500,9 +1500,9 @@ function update_access(req, res, next) {
 // ---------------------------------------------------------
 function remove_access(req, res, next) {
     var errStr = '';
-    if(!req.query.cOper)
+    if(!req.body.cOper)
         errStr += 'cOper undefined!';
-    if(!req.query.pId)
+    if(!req.body.pId)
         errStr += 'pId undefined!';
     if (errStr.length > 0)
     {
@@ -1560,7 +1560,7 @@ function getSingle_docImage(req, res, next) {
 // ---------------------------------------------------------
 function create_docImage(req, res, next) {
     var errStr = '';
-    if(!req.query.pageN)
+    if(!req.body.pageN)
         errStr += 'pageN undefined!';
     if (errStr.length > 0)
     {
@@ -1589,7 +1589,7 @@ function create_docImage(req, res, next) {
 // ---------------------------------------------------------
 function update_docImage(req, res, next) {
     var errStr = '';
-    if(!req.query.pageN)
+    if(!req.body.pageN)
         errStr += 'pageN undefined!';
     if (errStr.length > 0)
     {
@@ -1618,7 +1618,7 @@ function update_docImage(req, res, next) {
 // ---------------------------------------------------------
 function remove_docImage(req, res, next) {
     var errStr = '';
-    if(!req.query.pageN)
+    if(!req.body.pageN)
         errStr += 'pageN undefined!';
     if (errStr.length > 0)
     {
@@ -1678,9 +1678,9 @@ function getSingle_ref(req, res, next) {
 // ---------------------------------------------------------
 function create_ref(req, res, next) {
     var errStr = '';
-    if(!req.query.pId)
+    if(!req.body.pId)
         errStr += 'pId undefined!';
-    if(!req.query.per_pId)
+    if(!req.body.per_pId)
         errStr += 'per_pId undefined!';
     if (errStr.length > 0)
     {
@@ -1709,9 +1709,9 @@ function create_ref(req, res, next) {
 // ---------------------------------------------------------
 function update_ref(req, res, next) {
     var errStr = '';
-    if(!req.query.pId)
+    if(!req.body.pId)
         errStr += 'pId undefined!';
-    if(!req.query.per_pId)
+    if(!req.body.per_pId)
         errStr += 'per_pId undefined!';
     if (errStr.length > 0)
     {
@@ -1740,9 +1740,9 @@ function update_ref(req, res, next) {
 // ---------------------------------------------------------
 function remove_ref(req, res, next) {
     var errStr = '';
-    if(!req.query.pId)
+    if(!req.body.pId)
         errStr += 'pId undefined!';
-    if(!req.query.per_pId)
+    if(!req.body.per_pId)
         errStr += 'per_pId undefined!';
     if (errStr.length > 0)
     {

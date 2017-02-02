@@ -43,7 +43,7 @@ function getSingle_docSpec(req, res, next) {
 // --------------------------------------------------------- 
 //  The function insert data into docSpec
 //  URL : POST /redchain/docSpec
-//  BODY: cSpec=...&spec=...&spec_en=...
+//  BODY: spec=...&spec_en=...
 // ---------------------------------------------------------
 function create_docSpec(req, res, next) {
     var errStr = '';
@@ -54,6 +54,7 @@ function create_docSpec(req, res, next) {
         next(new Error(errStr));
         return;
     }
+
     db.one('insert into docSpec(spec,spec_en)' +
            'values(${spec},${spec_en}) returning cSpec',
             req.body)
@@ -160,7 +161,7 @@ function getSingle_doc(req, res, next) {
 // --------------------------------------------------------- 
 //  The function insert data into doc
 //  URL : POST /redchain/doc
-//  BODY: cDoc=...&cSpec=...&pId=...&cState=...&docN=...&docDate=...&docEnd=...&docAuth=...&Memo=...
+//  BODY: cSpec=...&pId=...&cState=...&docN=...&docDate=...&docEnd=...&docAuth=...&Memo=...
 // ---------------------------------------------------------
 function create_doc(req, res, next) {
     var errStr = '';
@@ -171,6 +172,7 @@ function create_doc(req, res, next) {
         next(new Error(errStr));
         return;
     }
+
     db.one('insert into doc(cSpec,pId,cState,docN,docDate,docEnd,docAuth,Memo)' +
            'values(${cSpec},${pId},${cState},${docN},${docDate},${docEnd},${docAuth},${Memo}) returning cDoc',
             req.body)
@@ -277,7 +279,7 @@ function getSingle_State(req, res, next) {
 // --------------------------------------------------------- 
 //  The function insert data into State
 //  URL : POST /redchain/State
-//  BODY: cState=...&State=...&State_en=...
+//  BODY: State=...&State_en=...
 // ---------------------------------------------------------
 function create_State(req, res, next) {
     var errStr = '';
@@ -288,6 +290,7 @@ function create_State(req, res, next) {
         next(new Error(errStr));
         return;
     }
+
     db.one('insert into State(State,State_en)' +
            'values(${State},${State_en}) returning cState',
             req.body)
@@ -405,6 +408,7 @@ function create_person(req, res, next) {
         next(new Error(errStr));
         return;
     }
+
     db.none('insert into person(pId,cState,shortName,fullName,legalName,bornDate,sexId)' +
            'values(${pId},${cState},${shortName},${fullName},${legalName},${bornDate},${sexId})',
             req.body)
@@ -521,6 +525,7 @@ function create_photoData(req, res, next) {
         next(new Error(errStr));
         return;
     }
+
     db.none('insert into photoData(pId,cPhoto,photo)' +
            'values(${pId},${cPhoto},${photo})',
             req.body)
@@ -626,7 +631,7 @@ function getSingle_photoSpec(req, res, next) {
 // --------------------------------------------------------- 
 //  The function insert data into photoSpec
 //  URL : POST /redchain/photoSpec
-//  BODY: cPhoto=...&photoSpec=...
+//  BODY: photoSpec=...
 // ---------------------------------------------------------
 function create_photoSpec(req, res, next) {
     var errStr = '';
@@ -637,6 +642,7 @@ function create_photoSpec(req, res, next) {
         next(new Error(errStr));
         return;
     }
+
     db.one('insert into photoSpec(photoSpec)' +
            'values(${photoSpec}) returning cPhoto',
             req.body)
@@ -754,6 +760,7 @@ function create_audioDatа(req, res, next) {
         next(new Error(errStr));
         return;
     }
+
     db.none('insert into audioDatа(pId,audioFull,audioMemo,Memo)' +
            'values(${pId},${audioFull},${audioMemo},${Memo})',
             req.body)
@@ -859,7 +866,7 @@ function getSingle_operator(req, res, next) {
 // --------------------------------------------------------- 
 //  The function insert data into operator
 //  URL : POST /redchain/operator
-//  BODY: cOper=...&cRule=...&cPoint=...&Stuff=...&Stuff_en=...&key=...&phrase=...&stateId=...
+//  BODY: cRule=...&cPoint=...&Stuff=...&Stuff_en=...&key=...&phrase=...&stateId=...
 // ---------------------------------------------------------
 function create_operator(req, res, next) {
     var errStr = '';
@@ -870,6 +877,7 @@ function create_operator(req, res, next) {
         next(new Error(errStr));
         return;
     }
+
     db.one('insert into operator(cRule,cPoint,Stuff,Stuff_en,key,phrase,stateId)' +
            'values(${cRule},${cPoint},${Stuff},${Stuff_en},${key},${phrase},${stateId}) returning cOper',
             req.body)
@@ -976,7 +984,7 @@ function getSingle_regPoint(req, res, next) {
 // --------------------------------------------------------- 
 //  The function insert data into regPoint
 //  URL : POST /redchain/regPoint
-//  BODY: cPoint=...&cState=...&point=...&point_en=...&location=...&location_en=...
+//  BODY: cState=...&point=...&point_en=...&location=...&location_en=...
 // ---------------------------------------------------------
 function create_regPoint(req, res, next) {
     var errStr = '';
@@ -987,6 +995,7 @@ function create_regPoint(req, res, next) {
         next(new Error(errStr));
         return;
     }
+
     db.one('insert into regPoint(cState,point,point_en,location,location_en)' +
            'values(${cState},${point},${point_en},${location},${location_en}) returning cPoint',
             req.body)
@@ -1093,7 +1102,7 @@ function getSingle_opRule(req, res, next) {
 // --------------------------------------------------------- 
 //  The function insert data into opRule
 //  URL : POST /redchain/opRule
-//  BODY: cRule=...&Rule=...&Rule_en=...
+//  BODY: Rule=...&Rule_en=...
 // ---------------------------------------------------------
 function create_opRule(req, res, next) {
     var errStr = '';
@@ -1104,6 +1113,7 @@ function create_opRule(req, res, next) {
         next(new Error(errStr));
         return;
     }
+
     db.one('insert into opRule(Rule,Rule_en)' +
            'values(${Rule},${Rule_en}) returning cRule',
             req.body)
@@ -1210,7 +1220,7 @@ function getSingle_Contact(req, res, next) {
 // --------------------------------------------------------- 
 //  The function insert data into Contact
 //  URL : POST /redchain/Contact
-//  BODY: cContact=...&cAgent=...&pId=...&key=...&phrase=...&Memo=...&stateId=...
+//  BODY: cAgent=...&pId=...&key=...&phrase=...&Memo=...&stateId=...
 // ---------------------------------------------------------
 function create_Contact(req, res, next) {
     var errStr = '';
@@ -1221,6 +1231,7 @@ function create_Contact(req, res, next) {
         next(new Error(errStr));
         return;
     }
+
     db.one('insert into Contact(cAgent,pId,key,phrase,Memo,stateId)' +
            'values(${cAgent},${pId},${key},${phrase},${Memo},${stateId}) returning cContact',
             req.body)
@@ -1327,7 +1338,7 @@ function getSingle_Agent(req, res, next) {
 // --------------------------------------------------------- 
 //  The function insert data into Agent
 //  URL : POST /redchain/Agent
-//  BODY: cAgent=...&Agent=...&Memo=...
+//  BODY: Agent=...&Memo=...
 // ---------------------------------------------------------
 function create_Agent(req, res, next) {
     var errStr = '';
@@ -1338,6 +1349,7 @@ function create_Agent(req, res, next) {
         next(new Error(errStr));
         return;
     }
+
     db.one('insert into Agent(Agent,Memo)' +
            'values(${Agent},${Memo}) returning cAgent',
             req.body)
@@ -1459,6 +1471,7 @@ function create_access(req, res, next) {
         next(new Error(errStr));
         return;
     }
+
     db.none('insert into access(cOper,pId,stateId)' +
            'values(${cOper},${pId},${stateId})',
             req.body)
@@ -1579,6 +1592,7 @@ function create_docImage(req, res, next) {
         next(new Error(errStr));
         return;
     }
+
     db.none('insert into docImage(pageN,cDoc,image)' +
            'values(${pageN},${cDoc},${image})',
             req.body)
@@ -1699,6 +1713,7 @@ function create_ref(req, res, next) {
         next(new Error(errStr));
         return;
     }
+
     db.none('insert into ref(pId,per_pId,Memo)' +
            'values(${pId},${per_pId},${Memo})',
             req.body)
@@ -1852,4 +1867,3 @@ module.exports = {
   update_ref: update_ref,
   remove_ref: remove_ref
 };
-

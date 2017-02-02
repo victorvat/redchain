@@ -26,7 +26,7 @@ function getSingle_docSpec(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.one('select * from docSpec where cSpec = $1',cSpec)
+    db.one('select * from docSpec where cSpec = $1',req.query.cSpec)
         .then(function (data) {
             res.status(200)
                 .json({
@@ -105,7 +105,7 @@ function remove_docSpec(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.result('delete from docSpec where cSpec = $1',cSpec)
+    db.result('delete from docSpec where cSpec = $1',req.body.cSpec)
         .then(function (result) {
             /* jshint ignore:start */
             res.status(200)
@@ -135,7 +135,7 @@ function getSingle_doc(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.one('select * from doc where cDoc = $1',cDoc)
+    db.one('select * from doc where cDoc = $1',req.query.cDoc)
         .then(function (data) {
             res.status(200)
                 .json({
@@ -214,7 +214,7 @@ function remove_doc(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.result('delete from doc where cDoc = $1',cDoc)
+    db.result('delete from doc where cDoc = $1',req.body.cDoc)
         .then(function (result) {
             /* jshint ignore:start */
             res.status(200)
@@ -244,7 +244,7 @@ function getSingle_State(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.one('select * from State where cState = $1',cState)
+    db.one('select * from State where cState = $1',req.query.cState)
         .then(function (data) {
             res.status(200)
                 .json({
@@ -323,7 +323,7 @@ function remove_State(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.result('delete from State where cState = $1',cState)
+    db.result('delete from State where cState = $1',req.body.cState)
         .then(function (result) {
             /* jshint ignore:start */
             res.status(200)
@@ -353,7 +353,7 @@ function getSingle_person(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.one('select * from person where pId = $1',pId)
+    db.one('select * from person where pId = $1',req.query.pId)
         .then(function (data) {
             res.status(200)
                 .json({
@@ -439,7 +439,7 @@ function remove_person(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.result('delete from person where pId = $1',pId)
+    db.result('delete from person where pId = $1',req.body.pId)
         .then(function (result) {
             /* jshint ignore:start */
             res.status(200)
@@ -469,7 +469,7 @@ function getSingle_photoData(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.one('select * from photoData where pId = $1',pId)
+    db.one('select * from photoData where pId = $1',req.query.pId)
         .then(function (data) {
             res.status(200)
                 .json({
@@ -555,7 +555,7 @@ function remove_photoData(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.result('delete from photoData where pId = $1',pId)
+    db.result('delete from photoData where pId = $1',req.body.pId)
         .then(function (result) {
             /* jshint ignore:start */
             res.status(200)
@@ -585,7 +585,7 @@ function getSingle_photoSpec(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.one('select * from photoSpec where cPhoto = $1',cPhoto)
+    db.one('select * from photoSpec where cPhoto = $1',req.query.cPhoto)
         .then(function (data) {
             res.status(200)
                 .json({
@@ -664,7 +664,7 @@ function remove_photoSpec(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.result('delete from photoSpec where cPhoto = $1',cPhoto)
+    db.result('delete from photoSpec where cPhoto = $1',req.body.cPhoto)
         .then(function (result) {
             /* jshint ignore:start */
             res.status(200)
@@ -694,7 +694,7 @@ function getSingle_audioDatа(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.one('select * from audioDatа where pId = $1',pId)
+    db.one('select * from audioDatа where pId = $1',req.query.pId)
         .then(function (data) {
             res.status(200)
                 .json({
@@ -780,7 +780,7 @@ function remove_audioDatа(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.result('delete from audioDatа where pId = $1',pId)
+    db.result('delete from audioDatа where pId = $1',req.body.pId)
         .then(function (result) {
             /* jshint ignore:start */
             res.status(200)
@@ -810,7 +810,7 @@ function getSingle_operator(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.one('select * from operator where cOper = $1',cOper)
+    db.one('select * from operator where cOper = $1',req.query.cOper)
         .then(function (data) {
             res.status(200)
                 .json({
@@ -889,7 +889,7 @@ function remove_operator(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.result('delete from operator where cOper = $1',cOper)
+    db.result('delete from operator where cOper = $1',req.body.cOper)
         .then(function (result) {
             /* jshint ignore:start */
             res.status(200)
@@ -919,7 +919,7 @@ function getSingle_regPoint(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.one('select * from regPoint where cPoint = $1',cPoint)
+    db.one('select * from regPoint where cPoint = $1',req.query.cPoint)
         .then(function (data) {
             res.status(200)
                 .json({
@@ -998,7 +998,7 @@ function remove_regPoint(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.result('delete from regPoint where cPoint = $1',cPoint)
+    db.result('delete from regPoint where cPoint = $1',req.body.cPoint)
         .then(function (result) {
             /* jshint ignore:start */
             res.status(200)
@@ -1028,7 +1028,7 @@ function getSingle_opRule(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.one('select * from opRule where cRule = $1',cRule)
+    db.one('select * from opRule where cRule = $1',req.query.cRule)
         .then(function (data) {
             res.status(200)
                 .json({
@@ -1107,7 +1107,7 @@ function remove_opRule(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.result('delete from opRule where cRule = $1',cRule)
+    db.result('delete from opRule where cRule = $1',req.body.cRule)
         .then(function (result) {
             /* jshint ignore:start */
             res.status(200)
@@ -1137,7 +1137,7 @@ function getSingle_Contact(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.one('select * from Contact where cContact = $1',cContact)
+    db.one('select * from Contact where cContact = $1',req.query.cContact)
         .then(function (data) {
             res.status(200)
                 .json({
@@ -1216,7 +1216,7 @@ function remove_Contact(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.result('delete from Contact where cContact = $1',cContact)
+    db.result('delete from Contact where cContact = $1',req.body.cContact)
         .then(function (result) {
             /* jshint ignore:start */
             res.status(200)
@@ -1246,7 +1246,7 @@ function getSingle_Agent(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.one('select * from Agent where cAgent = $1',cAgent)
+    db.one('select * from Agent where cAgent = $1',req.query.cAgent)
         .then(function (data) {
             res.status(200)
                 .json({
@@ -1325,7 +1325,7 @@ function remove_Agent(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.result('delete from Agent where cAgent = $1',cAgent)
+    db.result('delete from Agent where cAgent = $1',req.body.cAgent)
         .then(function (result) {
             /* jshint ignore:start */
             res.status(200)
@@ -1357,7 +1357,7 @@ function getSingle_access(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.one('select * from access where cOper = $1 and pId = $2',cOper, pId)
+    db.one('select * from access where cOper = $1 and pId = $2',req.query.cOper, req.query.pId)
         .then(function (data) {
             res.status(200)
                 .json({
@@ -1449,7 +1449,7 @@ function remove_access(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.result('delete from access where cOper = $1 and pId = $2',cOper, pId)
+    db.result('delete from access where cOper = $1 and pId = $2',req.body.cOper, req.body.pId)
         .then(function (result) {
             /* jshint ignore:start */
             res.status(200)
@@ -1479,7 +1479,7 @@ function getSingle_docImage(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.one('select * from docImage where pageN = $1',pageN)
+    db.one('select * from docImage where pageN = $1',req.query.pageN)
         .then(function (data) {
             res.status(200)
                 .json({
@@ -1565,7 +1565,7 @@ function remove_docImage(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.result('delete from docImage where pageN = $1',pageN)
+    db.result('delete from docImage where pageN = $1',req.body.pageN)
         .then(function (result) {
             /* jshint ignore:start */
             res.status(200)
@@ -1597,7 +1597,7 @@ function getSingle_ref(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.one('select * from ref where pId = $1 and per_pId = $2',pId, per_pId)
+    db.one('select * from ref where pId = $1 and per_pId = $2',req.query.pId, req.query.per_pId)
         .then(function (data) {
             res.status(200)
                 .json({
@@ -1689,7 +1689,7 @@ function remove_ref(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.result('delete from ref where pId = $1 and per_pId = $2',pId, per_pId)
+    db.result('delete from ref where pId = $1 and per_pId = $2',req.body.pId, req.body.per_pId)
         .then(function (result) {
             /* jshint ignore:start */
             res.status(200)

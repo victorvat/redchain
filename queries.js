@@ -76,9 +76,8 @@ function update_docSpec(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('update docSpec set spec=$1,spec_en=$2 where cSpec=$3',
-            req.body.spec,req.body.spec_en,
-            req.body.cSpec)
+    db.none('update docSpec set spec=${spec},spec_en=${spec_en} where cSpec=${cSpec}',            
+             req.body)
         .then(function () {
             res.status(200)
                 .json({
@@ -185,9 +184,8 @@ function update_doc(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('update doc set cSpec=$1,pId=$2,cState=$3,docN=$4,docDate=$5,docEnd=$6,docAuth=$7,Memo=$8 where cDoc=$9',
-            req.body.cSpec,req.body.pId,req.body.cState,req.body.docN,req.body.docDate,req.body.docEnd,req.body.docAuth,req.body.Memo,
-            req.body.cDoc)
+    db.none('update doc set cSpec=${cSpec},pId=${pId},cState=${cState},docN=${docN},docDate=${docDate},docEnd=${docEnd},docAuth=${docAuth},Memo=${Memo} where cDoc=${cDoc}',            
+             req.body)
         .then(function () {
             res.status(200)
                 .json({
@@ -294,9 +292,8 @@ function update_State(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('update State set State=$1,State_en=$2 where cState=$3',
-            req.body.State,req.body.State_en,
-            req.body.cState)
+    db.none('update State set State=${State},State_en=${State_en} where cState=${cState}',            
+             req.body)
         .then(function () {
             res.status(200)
                 .json({
@@ -410,9 +407,8 @@ function update_person(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('update person set cState=$1,shortName=$2,fullName=$3,legalName=$4,bornDate=$5,sexId=$6 where pId=$7',
-            req.body.cState,req.body.shortName,req.body.fullName,req.body.legalName,req.body.bornDate,req.body.sexId,
-            req.body.pId)
+    db.none('update person set cState=${cState},shortName=${shortName},fullName=${fullName},legalName=${legalName},bornDate=${bornDate},sexId=${sexId} where pId=${pId}',            
+             req.body)
         .then(function () {
             res.status(200)
                 .json({
@@ -526,9 +522,8 @@ function update_photoData(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('update photoData set cPhoto=$1,photo=$2 where pId=$3',
-            req.body.cPhoto,req.body.photo,
-            req.body.pId)
+    db.none('update photoData set cPhoto=${cPhoto},photo=${photo} where pId=${pId}',            
+             req.body)
         .then(function () {
             res.status(200)
                 .json({
@@ -635,9 +630,8 @@ function update_photoSpec(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('update photoSpec set photoSpec=$1 where cPhoto=$2',
-            req.body.photoSpec,
-            req.body.cPhoto)
+    db.none('update photoSpec set photoSpec=${photoSpec} where cPhoto=${cPhoto}',            
+             req.body)
         .then(function () {
             res.status(200)
                 .json({
@@ -751,9 +745,8 @@ function update_audioDatа(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('update audioDatа set audioFull=$1,audioMemo=$2,Memo=$3 where pId=$4',
-            req.body.audioFull,req.body.audioMemo,req.body.Memo,
-            req.body.pId)
+    db.none('update audioDatа set audioFull=${audioFull},audioMemo=${audioMemo},Memo=${Memo} where pId=${pId}',            
+             req.body)
         .then(function () {
             res.status(200)
                 .json({
@@ -860,9 +853,8 @@ function update_operator(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('update operator set cRule=$1,cPoint=$2,Stuff=$3,Stuff_en=$4,key=$5,phrase=$6,stateId=$7 where cOper=$8',
-            req.body.cRule,req.body.cPoint,req.body.Stuff,req.body.Stuff_en,req.body.key,req.body.phrase,req.body.stateId,
-            req.body.cOper)
+    db.none('update operator set cRule=${cRule},cPoint=${cPoint},Stuff=${Stuff},Stuff_en=${Stuff_en},key=${key},phrase=${phrase},stateId=${stateId} where cOper=${cOper}',            
+             req.body)
         .then(function () {
             res.status(200)
                 .json({
@@ -969,9 +961,8 @@ function update_regPoint(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('update regPoint set cState=$1,point=$2,point_en=$3,location=$4,location_en=$5 where cPoint=$6',
-            req.body.cState,req.body.point,req.body.point_en,req.body.location,req.body.location_en,
-            req.body.cPoint)
+    db.none('update regPoint set cState=${cState},point=${point},point_en=${point_en},location=${location},location_en=${location_en} where cPoint=${cPoint}',            
+             req.body)
         .then(function () {
             res.status(200)
                 .json({
@@ -1078,9 +1069,8 @@ function update_opRule(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('update opRule set Rule=$1,Rule_en=$2 where cRule=$3',
-            req.body.Rule,req.body.Rule_en,
-            req.body.cRule)
+    db.none('update opRule set Rule=${Rule},Rule_en=${Rule_en} where cRule=${cRule}',            
+             req.body)
         .then(function () {
             res.status(200)
                 .json({
@@ -1187,9 +1177,8 @@ function update_Contact(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('update Contact set cAgent=$1,pId=$2,key=$3,phrase=$4,Memo=$5,stateId=$6 where cContact=$7',
-            req.body.cAgent,req.body.pId,req.body.key,req.body.phrase,req.body.Memo,req.body.stateId,
-            req.body.cContact)
+    db.none('update Contact set cAgent=${cAgent},pId=${pId},key=${key},phrase=${phrase},Memo=${Memo},stateId=${stateId} where cContact=${cContact}',            
+             req.body)
         .then(function () {
             res.status(200)
                 .json({
@@ -1296,9 +1285,8 @@ function update_Agent(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('update Agent set Agent=$1,Memo=$2 where cAgent=$3',
-            req.body.Agent,req.body.Memo,
-            req.body.cAgent)
+    db.none('update Agent set Agent=${Agent},Memo=${Memo} where cAgent=${cAgent}',            
+             req.body)
         .then(function () {
             res.status(200)
                 .json({
@@ -1418,9 +1406,8 @@ function update_access(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('update access set stateId=$1 where cOper=$2 and pId=$3',
-            req.body.stateId,
-            req.body.cOper, req.body.pId)
+    db.none('update access set stateId=${stateId} where cOper=${cOper} and pId=${pId}',            
+             req.body)
         .then(function () {
             res.status(200)
                 .json({
@@ -1536,9 +1523,8 @@ function update_docImage(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('update docImage set cDoc=$1,image=$2 where pageN=$3',
-            req.body.cDoc,req.body.image,
-            req.body.pageN)
+    db.none('update docImage set cDoc=${cDoc},image=${image} where pageN=${pageN}',            
+             req.body)
         .then(function () {
             res.status(200)
                 .json({
@@ -1658,9 +1644,8 @@ function update_ref(req, res, next) {
         next(new Error(errStr));
         return;
     }
-    db.none('update ref set Memo=$1 where pId=$2 and per_pId=$3',
-            req.body.Memo,
-            req.body.pId, req.body.per_pId)
+    db.none('update ref set Memo=${Memo} where pId=${pId} and per_pId=${per_pId}',            
+             req.body)
         .then(function () {
             res.status(200)
                 .json({

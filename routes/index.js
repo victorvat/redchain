@@ -2,94 +2,80 @@ var express = require('express');
 var router = express.Router();
 
 var db = require('../queries');
-router.get('/api/docSpec', db.getAll_docSpec);
-router.get('/api/docSpec/:id', db.getSingle_docSpec);
-router.post('/api/docSpec', db.create_docSpec);
-router.put('/api/docSpec/:id', db.update_docSpec);
-router.delete('/api/docSpec/:id', db.remove_docSpec);
 
-router.get('/api/doc', db.getAll_doc);
-router.get('/api/doc/:id', db.getSingle_doc);
-router.post('/api/doc', db.create_doc);
-router.put('/api/doc/:id', db.update_doc);
-router.delete('/api/doc/:id', db.remove_doc);
+router.get(   '/redchain/docSpec/',  db.getSingle_docSpec);  // GET    /redchain/docSpec/?cSpec=... without BODY
+router.post(  '/redchain/docSpec',   db.create_docSpec);     // POST   /redchain/docSpec with BODY: cSpec=...&spec=...&spec_en=...
+router.put(   '/redchain/docSpec/',  db.update_docSpec);     // PUT    /redchain/docSpec with BODY: cSpec=...&spec=...&spec_en=...
+router.delete('/redchain/docSpec/',  db.remove_docSpec);     // DELETE /redchain/docSpec with BODY: cSpec=...
 
-router.get('/api/State', db.getAll_State);
-router.get('/api/State/:id', db.getSingle_State);
-router.post('/api/State', db.create_State);
-router.put('/api/State/:id', db.update_State);
-router.delete('/api/State/:id', db.remove_State);
+router.get(   '/redchain/doc/',  db.getSingle_doc);  // GET    /redchain/doc/?cDoc=... without BODY
+router.post(  '/redchain/doc',   db.create_doc);     // POST   /redchain/doc with BODY: cDoc=...&cSpec=...&pId=...&cState=...&docN=...&docDate=...&docEnd=...&docAuth=...&Memo=...
+router.put(   '/redchain/doc/',  db.update_doc);     // PUT    /redchain/doc with BODY: cDoc=...&cSpec=...&pId=...&cState=...&docN=...&docDate=...&docEnd=...&docAuth=...&Memo=...
+router.delete('/redchain/doc/',  db.remove_doc);     // DELETE /redchain/doc with BODY: cDoc=...
 
-router.get('/api/person', db.getAll_person);
-router.get('/api/person/:id', db.getSingle_person);
-router.post('/api/person', db.create_person);
-router.put('/api/person/:id', db.update_person);
-router.delete('/api/person/:id', db.remove_person);
+router.get(   '/redchain/State/',  db.getSingle_State);  // GET    /redchain/State/?cState=... without BODY
+router.post(  '/redchain/State',   db.create_State);     // POST   /redchain/State with BODY: cState=...&State=...&State_en=...
+router.put(   '/redchain/State/',  db.update_State);     // PUT    /redchain/State with BODY: cState=...&State=...&State_en=...
+router.delete('/redchain/State/',  db.remove_State);     // DELETE /redchain/State with BODY: cState=...
 
-router.get('/api/photoData', db.getAll_photoData);
-router.get('/api/photoData/:id', db.getSingle_photoData);
-router.post('/api/photoData', db.create_photoData);
-router.put('/api/photoData/:id', db.update_photoData);
-router.delete('/api/photoData/:id', db.remove_photoData);
+router.get(   '/redchain/person/',  db.getSingle_person);  // GET    /redchain/person/?pId=... without BODY
+router.post(  '/redchain/person',   db.create_person);     // POST   /redchain/person with BODY: pId=...&cState=...&shortName=...&fullName=...&legalName=...&bornDate=...&sexId=...
+router.put(   '/redchain/person/',  db.update_person);     // PUT    /redchain/person with BODY: pId=...&cState=...&shortName=...&fullName=...&legalName=...&bornDate=...&sexId=...
+router.delete('/redchain/person/',  db.remove_person);     // DELETE /redchain/person with BODY: pId=...
 
-router.get('/api/photoSpec', db.getAll_photoSpec);
-router.get('/api/photoSpec/:id', db.getSingle_photoSpec);
-router.post('/api/photoSpec', db.create_photoSpec);
-router.put('/api/photoSpec/:id', db.update_photoSpec);
-router.delete('/api/photoSpec/:id', db.remove_photoSpec);
+router.get(   '/redchain/photoData/',  db.getSingle_photoData);  // GET    /redchain/photoData/?pId=... without BODY
+router.post(  '/redchain/photoData',   db.create_photoData);     // POST   /redchain/photoData with BODY: pId=...&cPhoto=...&photo=...
+router.put(   '/redchain/photoData/',  db.update_photoData);     // PUT    /redchain/photoData with BODY: pId=...&cPhoto=...&photo=...
+router.delete('/redchain/photoData/',  db.remove_photoData);     // DELETE /redchain/photoData with BODY: pId=...
 
-router.get('/api/audioDatа', db.getAll_audioDatа);
-router.get('/api/audioDatа/:id', db.getSingle_audioDatа);
-router.post('/api/audioDatа', db.create_audioDatа);
-router.put('/api/audioDatа/:id', db.update_audioDatа);
-router.delete('/api/audioDatа/:id', db.remove_audioDatа);
+router.get(   '/redchain/photoSpec/',  db.getSingle_photoSpec);  // GET    /redchain/photoSpec/?cPhoto=... without BODY
+router.post(  '/redchain/photoSpec',   db.create_photoSpec);     // POST   /redchain/photoSpec with BODY: cPhoto=...&photoSpec=...
+router.put(   '/redchain/photoSpec/',  db.update_photoSpec);     // PUT    /redchain/photoSpec with BODY: cPhoto=...&photoSpec=...
+router.delete('/redchain/photoSpec/',  db.remove_photoSpec);     // DELETE /redchain/photoSpec with BODY: cPhoto=...
 
-router.get('/api/operator', db.getAll_operator);
-router.get('/api/operator/:id', db.getSingle_operator);
-router.post('/api/operator', db.create_operator);
-router.put('/api/operator/:id', db.update_operator);
-router.delete('/api/operator/:id', db.remove_operator);
+router.get(   '/redchain/audioDatа/',  db.getSingle_audioDatа);  // GET    /redchain/audioDatа/?pId=... without BODY
+router.post(  '/redchain/audioDatа',   db.create_audioDatа);     // POST   /redchain/audioDatа with BODY: pId=...&audioFull=...&audioMemo=...&Memo=...
+router.put(   '/redchain/audioDatа/',  db.update_audioDatа);     // PUT    /redchain/audioDatа with BODY: pId=...&audioFull=...&audioMemo=...&Memo=...
+router.delete('/redchain/audioDatа/',  db.remove_audioDatа);     // DELETE /redchain/audioDatа with BODY: pId=...
 
-router.get('/api/regPoint', db.getAll_regPoint);
-router.get('/api/regPoint/:id', db.getSingle_regPoint);
-router.post('/api/regPoint', db.create_regPoint);
-router.put('/api/regPoint/:id', db.update_regPoint);
-router.delete('/api/regPoint/:id', db.remove_regPoint);
+router.get(   '/redchain/operator/',  db.getSingle_operator);  // GET    /redchain/operator/?cOper=... without BODY
+router.post(  '/redchain/operator',   db.create_operator);     // POST   /redchain/operator with BODY: cOper=...&cRule=...&cPoint=...&Stuff=...&Stuff_en=...&key=...&phrase=...&stateId=...
+router.put(   '/redchain/operator/',  db.update_operator);     // PUT    /redchain/operator with BODY: cOper=...&cRule=...&cPoint=...&Stuff=...&Stuff_en=...&key=...&phrase=...&stateId=...
+router.delete('/redchain/operator/',  db.remove_operator);     // DELETE /redchain/operator with BODY: cOper=...
 
-router.get('/api/opRule', db.getAll_opRule);
-router.get('/api/opRule/:id', db.getSingle_opRule);
-router.post('/api/opRule', db.create_opRule);
-router.put('/api/opRule/:id', db.update_opRule);
-router.delete('/api/opRule/:id', db.remove_opRule);
+router.get(   '/redchain/regPoint/',  db.getSingle_regPoint);  // GET    /redchain/regPoint/?cPoint=... without BODY
+router.post(  '/redchain/regPoint',   db.create_regPoint);     // POST   /redchain/regPoint with BODY: cPoint=...&cState=...&point=...&point_en=...&location=...&location_en=...
+router.put(   '/redchain/regPoint/',  db.update_regPoint);     // PUT    /redchain/regPoint with BODY: cPoint=...&cState=...&point=...&point_en=...&location=...&location_en=...
+router.delete('/redchain/regPoint/',  db.remove_regPoint);     // DELETE /redchain/regPoint with BODY: cPoint=...
 
-router.get('/api/Contact', db.getAll_Contact);
-router.get('/api/Contact/:id', db.getSingle_Contact);
-router.post('/api/Contact', db.create_Contact);
-router.put('/api/Contact/:id', db.update_Contact);
-router.delete('/api/Contact/:id', db.remove_Contact);
+router.get(   '/redchain/opRule/',  db.getSingle_opRule);  // GET    /redchain/opRule/?cRule=... without BODY
+router.post(  '/redchain/opRule',   db.create_opRule);     // POST   /redchain/opRule with BODY: cRule=...&Rule=...&Rule_en=...
+router.put(   '/redchain/opRule/',  db.update_opRule);     // PUT    /redchain/opRule with BODY: cRule=...&Rule=...&Rule_en=...
+router.delete('/redchain/opRule/',  db.remove_opRule);     // DELETE /redchain/opRule with BODY: cRule=...
 
-router.get('/api/Agent', db.getAll_Agent);
-router.get('/api/Agent/:id', db.getSingle_Agent);
-router.post('/api/Agent', db.create_Agent);
-router.put('/api/Agent/:id', db.update_Agent);
-router.delete('/api/Agent/:id', db.remove_Agent);
+router.get(   '/redchain/Contact/',  db.getSingle_Contact);  // GET    /redchain/Contact/?cContact=... without BODY
+router.post(  '/redchain/Contact',   db.create_Contact);     // POST   /redchain/Contact with BODY: cContact=...&cAgent=...&pId=...&key=...&phrase=...&Memo=...&stateId=...
+router.put(   '/redchain/Contact/',  db.update_Contact);     // PUT    /redchain/Contact with BODY: cContact=...&cAgent=...&pId=...&key=...&phrase=...&Memo=...&stateId=...
+router.delete('/redchain/Contact/',  db.remove_Contact);     // DELETE /redchain/Contact with BODY: cContact=...
 
-router.get('/api/access', db.getAll_access);
-router.get('/api/access/:id', db.getSingle_access);
-router.post('/api/access', db.create_access);
-router.put('/api/access/:id', db.update_access);
-router.delete('/api/access/:id', db.remove_access);
+router.get(   '/redchain/Agent/',  db.getSingle_Agent);  // GET    /redchain/Agent/?cAgent=... without BODY
+router.post(  '/redchain/Agent',   db.create_Agent);     // POST   /redchain/Agent with BODY: cAgent=...&Agent=...&Memo=...
+router.put(   '/redchain/Agent/',  db.update_Agent);     // PUT    /redchain/Agent with BODY: cAgent=...&Agent=...&Memo=...
+router.delete('/redchain/Agent/',  db.remove_Agent);     // DELETE /redchain/Agent with BODY: cAgent=...
 
-router.get('/api/docImage', db.getAll_docImage);
-router.get('/api/docImage/:id', db.getSingle_docImage);
-router.post('/api/docImage', db.create_docImage);
-router.put('/api/docImage/:id', db.update_docImage);
-router.delete('/api/docImage/:id', db.remove_docImage);
+router.get(   '/redchain/access/',  db.getSingle_access);  // GET    /redchain/access/?cOper=...&pId=... without BODY
+router.post(  '/redchain/access',   db.create_access);     // POST   /redchain/access with BODY: cOper=...&pId=...&stateId=...
+router.put(   '/redchain/access/',  db.update_access);     // PUT    /redchain/access with BODY: cOper=...&pId=...&stateId=...
+router.delete('/redchain/access/',  db.remove_access);     // DELETE /redchain/access with BODY: cOper=...&pId=...
 
-router.get('/api/ref', db.getAll_ref);
-router.get('/api/ref/:id', db.getSingle_ref);
-router.post('/api/ref', db.create_ref);
-router.put('/api/ref/:id', db.update_ref);
-router.delete('/api/ref/:id', db.remove_ref);
+router.get(   '/redchain/docImage/',  db.getSingle_docImage);  // GET    /redchain/docImage/?pageN=... without BODY
+router.post(  '/redchain/docImage',   db.create_docImage);     // POST   /redchain/docImage with BODY: pageN=...&cDoc=...&image=...
+router.put(   '/redchain/docImage/',  db.update_docImage);     // PUT    /redchain/docImage with BODY: pageN=...&cDoc=...&image=...
+router.delete('/redchain/docImage/',  db.remove_docImage);     // DELETE /redchain/docImage with BODY: pageN=...
+
+router.get(   '/redchain/ref/',  db.getSingle_ref);  // GET    /redchain/ref/?pId=...&per_pId=... without BODY
+router.post(  '/redchain/ref',   db.create_ref);     // POST   /redchain/ref with BODY: pId=...&per_pId=...&Memo=...
+router.put(   '/redchain/ref/',  db.update_ref);     // PUT    /redchain/ref with BODY: pId=...&per_pId=...&Memo=...
+router.delete('/redchain/ref/',  db.remove_ref);     // DELETE /redchain/ref with BODY: pId=...&per_pId=...
 
 module.exports = router;

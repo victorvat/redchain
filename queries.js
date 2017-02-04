@@ -1,4 +1,6 @@
 var promise = require('bluebird');
+var express = require('express');
+var app = express();
 
 var options = {
   // Initialization Options
@@ -6,7 +8,9 @@ var options = {
 };
 
 var pgp = require('pg-promise')(options);
-var config = require('./server/config');
+var fs = require('fs');
+var ini = require('ini');
+var config = ini.parse(fs.readFileSync('./config.ini', 'utf-8'))
 var connectionString = config.database.connectionString;
 var db = pgp(connectionString);
 
@@ -93,6 +97,47 @@ function getWhere_docSpec(req, res, next) {
         return;
     }
     db.one('select * from docSpec ' + whereStr)
+        .then(function (data) {
+            res.status(200)
+                .json({
+                    status: 'success',
+                    data: data,
+                    message: 'Retrieved ONE docSpec'
+                });
+        })
+        .catch(function (err) {
+            return next(err);
+    });
+}
+
+// ---------------------------------------------------------
+//  The function retrieves data from docSpec using WHERE clause
+//  URL : POST /docSpec/query/
+//  BODY: cSpec=...&spec=...&spec_en=...
+// ---------------------------------------------------------
+function getPostWhere_docSpec(req, res, next) {
+   var whereStr = '';
+   if(req.body.cSpec)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " cSpec = " + req.body.cSpec.trim();
+   }
+   if(req.body.spec)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " spec LIKE '%" + req.body.spec.trim() + "%'";
+   }
+   if(req.body.spec_en)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " spec_en LIKE '%" + req.body.spec_en.trim() + "%'";
+   }
+   var sqlStr = 'select * from docSpec ' + whereStr;
+
+    if (app.get('env') === 'development') {
+      console.log( sqlStr );
+    }
+    db.one(sqlStr)
         .then(function (data) {
             res.status(200)
                 .json({
@@ -302,6 +347,77 @@ function getWhere_doc(req, res, next) {
 }
 
 // ---------------------------------------------------------
+//  The function retrieves data from doc using WHERE clause
+//  URL : POST /doc/query/
+//  BODY: cDoc=...&cSpec=...&pId=...&cState=...&docN=...&docDate=...&docEnd=...&docAuth=...&Memo=...
+// ---------------------------------------------------------
+function getPostWhere_doc(req, res, next) {
+   var whereStr = '';
+   if(req.body.cDoc)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " cDoc = " + req.body.cDoc.trim();
+   }
+   if(req.body.cSpec)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " cSpec = " + req.body.cSpec.trim();
+   }
+   if(req.body.pId)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " pId = " + req.body.pId.trim();
+   }
+   if(req.body.cState)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " cState = " + req.body.cState.trim();
+   }
+   if(req.body.docN)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " docN LIKE '%" + req.body.docN.trim() + "%'";
+   }
+   if(req.body.docDate)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " docDate = '" + req.body.docDate.trim() + "'";
+   }
+   if(req.body.docEnd)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " docEnd = '" + req.body.docEnd.trim() + "'";
+   }
+   if(req.body.docAuth)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " docAuth LIKE '%" + req.body.docAuth.trim() + "%'";
+   }
+   if(req.body.Memo)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " Memo = " + req.body.Memo.trim();
+   }
+   var sqlStr = 'select * from doc ' + whereStr;
+
+    if (app.get('env') === 'development') {
+      console.log( sqlStr );
+    }
+    db.one(sqlStr)
+        .then(function (data) {
+            res.status(200)
+                .json({
+                    status: 'success',
+                    data: data,
+                    message: 'Retrieved ONE doc'
+                });
+        })
+        .catch(function (err) {
+            return next(err);
+    });
+}
+
+// ---------------------------------------------------------
 //  The function insert data into doc
 //  URL : POST /doc
 //  BODY:cSpec=...&pId=...&cState=...&docN=...&docDate=...&docEnd=...&docAuth=...&Memo=...
@@ -453,6 +569,47 @@ function getWhere_State(req, res, next) {
         return;
     }
     db.one('select * from State ' + whereStr)
+        .then(function (data) {
+            res.status(200)
+                .json({
+                    status: 'success',
+                    data: data,
+                    message: 'Retrieved ONE State'
+                });
+        })
+        .catch(function (err) {
+            return next(err);
+    });
+}
+
+// ---------------------------------------------------------
+//  The function retrieves data from State using WHERE clause
+//  URL : POST /State/query/
+//  BODY: cState=...&State=...&State_en=...
+// ---------------------------------------------------------
+function getPostWhere_State(req, res, next) {
+   var whereStr = '';
+   if(req.body.cState)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " cState = " + req.body.cState.trim();
+   }
+   if(req.body.State)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " State LIKE '%" + req.body.State.trim() + "%'";
+   }
+   if(req.body.State_en)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " State_en LIKE '%" + req.body.State_en.trim() + "%'";
+   }
+   var sqlStr = 'select * from State ' + whereStr;
+
+    if (app.get('env') === 'development') {
+      console.log( sqlStr );
+    }
+    db.one(sqlStr)
         .then(function (data) {
             res.status(200)
                 .json({
@@ -652,6 +809,67 @@ function getWhere_person(req, res, next) {
 }
 
 // ---------------------------------------------------------
+//  The function retrieves data from person using WHERE clause
+//  URL : POST /person/query/
+//  BODY: pId=...&cState=...&shortName=...&fullName=...&legalName=...&bornDate=...&sexId=...
+// ---------------------------------------------------------
+function getPostWhere_person(req, res, next) {
+   var whereStr = '';
+   if(req.body.pId)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " pId = " + req.body.pId.trim();
+   }
+   if(req.body.cState)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " cState = " + req.body.cState.trim();
+   }
+   if(req.body.shortName)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " shortName LIKE '%" + req.body.shortName.trim() + "%'";
+   }
+   if(req.body.fullName)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " fullName LIKE '%" + req.body.fullName.trim() + "%'";
+   }
+   if(req.body.legalName)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " legalName LIKE '%" + req.body.legalName.trim() + "%'";
+   }
+   if(req.body.bornDate)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " bornDate = '" + req.body.bornDate.trim() + "'";
+   }
+   if(req.body.sexId)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " sexId = " + req.body.sexId.trim();
+   }
+   var sqlStr = 'select * from person ' + whereStr;
+
+    if (app.get('env') === 'development') {
+      console.log( sqlStr );
+    }
+    db.one(sqlStr)
+        .then(function (data) {
+            res.status(200)
+                .json({
+                    status: 'success',
+                    data: data,
+                    message: 'Retrieved ONE person'
+                });
+        })
+        .catch(function (err) {
+            return next(err);
+    });
+}
+
+// ---------------------------------------------------------
 //  The function insert data into person
 //  URL : POST /person
 //  BODY:pId=...&cState=...&shortName=...&fullName=...&legalName=...&bornDate=...&sexId=...
@@ -810,6 +1028,47 @@ function getWhere_photoData(req, res, next) {
         return;
     }
     db.one('select * from photoData ' + whereStr)
+        .then(function (data) {
+            res.status(200)
+                .json({
+                    status: 'success',
+                    data: data,
+                    message: 'Retrieved ONE photoData'
+                });
+        })
+        .catch(function (err) {
+            return next(err);
+    });
+}
+
+// ---------------------------------------------------------
+//  The function retrieves data from photoData using WHERE clause
+//  URL : POST /photoData/query/
+//  BODY: pId=...&cPhoto=...&photo=...
+// ---------------------------------------------------------
+function getPostWhere_photoData(req, res, next) {
+   var whereStr = '';
+   if(req.body.pId)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " pId = " + req.body.pId.trim();
+   }
+   if(req.body.cPhoto)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " cPhoto = " + req.body.cPhoto.trim();
+   }
+   if(req.body.photo)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " photo LIKE '%" + req.body.photo.trim() + "%'";
+   }
+   var sqlStr = 'select * from photoData ' + whereStr;
+
+    if (app.get('env') === 'development') {
+      console.log( sqlStr );
+    }
+    db.one(sqlStr)
         .then(function (data) {
             res.status(200)
                 .json({
@@ -991,6 +1250,42 @@ function getWhere_photoSpec(req, res, next) {
 }
 
 // ---------------------------------------------------------
+//  The function retrieves data from photoSpec using WHERE clause
+//  URL : POST /photoSpec/query/
+//  BODY: cPhoto=...&photoSpec=...
+// ---------------------------------------------------------
+function getPostWhere_photoSpec(req, res, next) {
+   var whereStr = '';
+   if(req.body.cPhoto)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " cPhoto = " + req.body.cPhoto.trim();
+   }
+   if(req.body.photoSpec)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " photoSpec LIKE '%" + req.body.photoSpec.trim() + "%'";
+   }
+   var sqlStr = 'select * from photoSpec ' + whereStr;
+
+    if (app.get('env') === 'development') {
+      console.log( sqlStr );
+    }
+    db.one(sqlStr)
+        .then(function (data) {
+            res.status(200)
+                .json({
+                    status: 'success',
+                    data: data,
+                    message: 'Retrieved ONE photoSpec'
+                });
+        })
+        .catch(function (err) {
+            return next(err);
+    });
+}
+
+// ---------------------------------------------------------
 //  The function insert data into photoSpec
 //  URL : POST /photoSpec
 //  BODY:photoSpec=...
@@ -1147,6 +1442,52 @@ function getWhere_audioDatа(req, res, next) {
         return;
     }
     db.one('select * from audioDatа ' + whereStr)
+        .then(function (data) {
+            res.status(200)
+                .json({
+                    status: 'success',
+                    data: data,
+                    message: 'Retrieved ONE audioDatа'
+                });
+        })
+        .catch(function (err) {
+            return next(err);
+    });
+}
+
+// ---------------------------------------------------------
+//  The function retrieves data from audioDatа using WHERE clause
+//  URL : POST /audioDatа/query/
+//  BODY: pId=...&audioFull=...&audioMemo=...&Memo=...
+// ---------------------------------------------------------
+function getPostWhere_audioDatа(req, res, next) {
+   var whereStr = '';
+   if(req.body.pId)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " pId = " + req.body.pId.trim();
+   }
+   if(req.body.audioFull)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " audioFull LIKE '%" + req.body.audioFull.trim() + "%'";
+   }
+   if(req.body.audioMemo)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " audioMemo LIKE '%" + req.body.audioMemo.trim() + "%'";
+   }
+   if(req.body.Memo)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " Memo = " + req.body.Memo.trim();
+   }
+   var sqlStr = 'select * from audioDatа ' + whereStr;
+
+    if (app.get('env') === 'development') {
+      console.log( sqlStr );
+    }
+    db.one(sqlStr)
         .then(function (data) {
             res.status(200)
                 .json({
@@ -1358,6 +1699,72 @@ function getWhere_operator(req, res, next) {
 }
 
 // ---------------------------------------------------------
+//  The function retrieves data from operator using WHERE clause
+//  URL : POST /operator/query/
+//  BODY: cOper=...&cRule=...&cPoint=...&Stuff=...&Stuff_en=...&key=...&phrase=...&stateId=...
+// ---------------------------------------------------------
+function getPostWhere_operator(req, res, next) {
+   var whereStr = '';
+   if(req.body.cOper)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " cOper = " + req.body.cOper.trim();
+   }
+   if(req.body.cRule)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " cRule = " + req.body.cRule.trim();
+   }
+   if(req.body.cPoint)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " cPoint = " + req.body.cPoint.trim();
+   }
+   if(req.body.Stuff)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " Stuff LIKE '%" + req.body.Stuff.trim() + "%'";
+   }
+   if(req.body.Stuff_en)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " Stuff_en LIKE '%" + req.body.Stuff_en.trim() + "%'";
+   }
+   if(req.body.key)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " key LIKE '%" + req.body.key.trim() + "%'";
+   }
+   if(req.body.phrase)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " phrase LIKE '%" + req.body.phrase.trim() + "%'";
+   }
+   if(req.body.stateId)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " stateId = " + req.body.stateId.trim();
+   }
+   var sqlStr = 'select * from operator ' + whereStr;
+
+    if (app.get('env') === 'development') {
+      console.log( sqlStr );
+    }
+    db.one(sqlStr)
+        .then(function (data) {
+            res.status(200)
+                .json({
+                    status: 'success',
+                    data: data,
+                    message: 'Retrieved ONE operator'
+                });
+        })
+        .catch(function (err) {
+            return next(err);
+    });
+}
+
+// ---------------------------------------------------------
 //  The function insert data into operator
 //  URL : POST /operator
 //  BODY:cRule=...&cPoint=...&Stuff=...&Stuff_en=...&key=...&phrase=...&stateId=...
@@ -1538,6 +1945,62 @@ function getWhere_regPoint(req, res, next) {
 }
 
 // ---------------------------------------------------------
+//  The function retrieves data from regPoint using WHERE clause
+//  URL : POST /regPoint/query/
+//  BODY: cPoint=...&cState=...&point=...&point_en=...&location=...&location_en=...
+// ---------------------------------------------------------
+function getPostWhere_regPoint(req, res, next) {
+   var whereStr = '';
+   if(req.body.cPoint)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " cPoint = " + req.body.cPoint.trim();
+   }
+   if(req.body.cState)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " cState = " + req.body.cState.trim();
+   }
+   if(req.body.point)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " point LIKE '%" + req.body.point.trim() + "%'";
+   }
+   if(req.body.point_en)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " point_en LIKE '%" + req.body.point_en.trim() + "%'";
+   }
+   if(req.body.location)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " location LIKE '%" + req.body.location.trim() + "%'";
+   }
+   if(req.body.location_en)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " location_en LIKE '%" + req.body.location_en.trim() + "%'";
+   }
+   var sqlStr = 'select * from regPoint ' + whereStr;
+
+    if (app.get('env') === 'development') {
+      console.log( sqlStr );
+    }
+    db.one(sqlStr)
+        .then(function (data) {
+            res.status(200)
+                .json({
+                    status: 'success',
+                    data: data,
+                    message: 'Retrieved ONE regPoint'
+                });
+        })
+        .catch(function (err) {
+            return next(err);
+    });
+}
+
+// ---------------------------------------------------------
 //  The function insert data into regPoint
 //  URL : POST /regPoint
 //  BODY:cState=...&point=...&point_en=...&location=...&location_en=...
@@ -1689,6 +2152,47 @@ function getWhere_opRule(req, res, next) {
         return;
     }
     db.one('select * from opRule ' + whereStr)
+        .then(function (data) {
+            res.status(200)
+                .json({
+                    status: 'success',
+                    data: data,
+                    message: 'Retrieved ONE opRule'
+                });
+        })
+        .catch(function (err) {
+            return next(err);
+    });
+}
+
+// ---------------------------------------------------------
+//  The function retrieves data from opRule using WHERE clause
+//  URL : POST /opRule/query/
+//  BODY: cRule=...&Rule=...&Rule_en=...
+// ---------------------------------------------------------
+function getPostWhere_opRule(req, res, next) {
+   var whereStr = '';
+   if(req.body.cRule)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " cRule = " + req.body.cRule.trim();
+   }
+   if(req.body.Rule)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " Rule LIKE '%" + req.body.Rule.trim() + "%'";
+   }
+   if(req.body.Rule_en)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " Rule_en LIKE '%" + req.body.Rule_en.trim() + "%'";
+   }
+   var sqlStr = 'select * from opRule ' + whereStr;
+
+    if (app.get('env') === 'development') {
+      console.log( sqlStr );
+    }
+    db.one(sqlStr)
         .then(function (data) {
             res.status(200)
                 .json({
@@ -1888,6 +2392,67 @@ function getWhere_Contact(req, res, next) {
 }
 
 // ---------------------------------------------------------
+//  The function retrieves data from Contact using WHERE clause
+//  URL : POST /Contact/query/
+//  BODY: cContact=...&cAgent=...&pId=...&key=...&phrase=...&Memo=...&stateId=...
+// ---------------------------------------------------------
+function getPostWhere_Contact(req, res, next) {
+   var whereStr = '';
+   if(req.body.cContact)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " cContact = " + req.body.cContact.trim();
+   }
+   if(req.body.cAgent)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " cAgent = " + req.body.cAgent.trim();
+   }
+   if(req.body.pId)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " pId = " + req.body.pId.trim();
+   }
+   if(req.body.key)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " key LIKE '%" + req.body.key.trim() + "%'";
+   }
+   if(req.body.phrase)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " phrase LIKE '%" + req.body.phrase.trim() + "%'";
+   }
+   if(req.body.Memo)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " Memo = " + req.body.Memo.trim();
+   }
+   if(req.body.stateId)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " stateId = " + req.body.stateId.trim();
+   }
+   var sqlStr = 'select * from Contact ' + whereStr;
+
+    if (app.get('env') === 'development') {
+      console.log( sqlStr );
+    }
+    db.one(sqlStr)
+        .then(function (data) {
+            res.status(200)
+                .json({
+                    status: 'success',
+                    data: data,
+                    message: 'Retrieved ONE Contact'
+                });
+        })
+        .catch(function (err) {
+            return next(err);
+    });
+}
+
+// ---------------------------------------------------------
 //  The function insert data into Contact
 //  URL : POST /Contact
 //  BODY:cAgent=...&pId=...&key=...&phrase=...&Memo=...&stateId=...
@@ -2053,6 +2618,47 @@ function getWhere_Agent(req, res, next) {
 }
 
 // ---------------------------------------------------------
+//  The function retrieves data from Agent using WHERE clause
+//  URL : POST /Agent/query/
+//  BODY: cAgent=...&Agent=...&Memo=...
+// ---------------------------------------------------------
+function getPostWhere_Agent(req, res, next) {
+   var whereStr = '';
+   if(req.body.cAgent)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " cAgent = " + req.body.cAgent.trim();
+   }
+   if(req.body.Agent)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " Agent LIKE '%" + req.body.Agent.trim() + "%'";
+   }
+   if(req.body.Memo)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " Memo = " + req.body.Memo.trim();
+   }
+   var sqlStr = 'select * from Agent ' + whereStr;
+
+    if (app.get('env') === 'development') {
+      console.log( sqlStr );
+    }
+    db.one(sqlStr)
+        .then(function (data) {
+            res.status(200)
+                .json({
+                    status: 'success',
+                    data: data,
+                    message: 'Retrieved ONE Agent'
+                });
+        })
+        .catch(function (err) {
+            return next(err);
+    });
+}
+
+// ---------------------------------------------------------
 //  The function insert data into Agent
 //  URL : POST /Agent
 //  BODY:Agent=...&Memo=...
@@ -2201,6 +2807,47 @@ function getWhere_access(req, res, next) {
         return;
     }
     db.one('select * from access ' + whereStr)
+        .then(function (data) {
+            res.status(200)
+                .json({
+                    status: 'success',
+                    data: data,
+                    message: 'Retrieved ONE access'
+                });
+        })
+        .catch(function (err) {
+            return next(err);
+    });
+}
+
+// ---------------------------------------------------------
+//  The function retrieves data from access using WHERE clause
+//  URL : POST /access/query/
+//  BODY: cOper=...&pId=...&stateId=...
+// ---------------------------------------------------------
+function getPostWhere_access(req, res, next) {
+   var whereStr = '';
+   if(req.body.cOper)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " cOper = " + req.body.cOper.trim();
+   }
+   if(req.body.pId)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " pId = " + req.body.pId.trim();
+   }
+   if(req.body.stateId)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " stateId = " + req.body.stateId.trim();
+   }
+   var sqlStr = 'select * from access ' + whereStr;
+
+    if (app.get('env') === 'development') {
+      console.log( sqlStr );
+    }
+    db.one(sqlStr)
         .then(function (data) {
             res.status(200)
                 .json({
@@ -2393,6 +3040,47 @@ function getWhere_docImage(req, res, next) {
 }
 
 // ---------------------------------------------------------
+//  The function retrieves data from docImage using WHERE clause
+//  URL : POST /docImage/query/
+//  BODY: pageN=...&cDoc=...&image=...
+// ---------------------------------------------------------
+function getPostWhere_docImage(req, res, next) {
+   var whereStr = '';
+   if(req.body.pageN)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " pageN = " + req.body.pageN.trim();
+   }
+   if(req.body.cDoc)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " cDoc = " + req.body.cDoc.trim();
+   }
+   if(req.body.image)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " image LIKE '%" + req.body.image.trim() + "%'";
+   }
+   var sqlStr = 'select * from docImage ' + whereStr;
+
+    if (app.get('env') === 'development') {
+      console.log( sqlStr );
+    }
+    db.one(sqlStr)
+        .then(function (data) {
+            res.status(200)
+                .json({
+                    status: 'success',
+                    data: data,
+                    message: 'Retrieved ONE docImage'
+                });
+        })
+        .catch(function (err) {
+            return next(err);
+    });
+}
+
+// ---------------------------------------------------------
 //  The function insert data into docImage
 //  URL : POST /docImage
 //  BODY:pageN=...&cDoc=...&image=...
@@ -2562,6 +3250,47 @@ function getWhere_ref(req, res, next) {
 }
 
 // ---------------------------------------------------------
+//  The function retrieves data from ref using WHERE clause
+//  URL : POST /ref/query/
+//  BODY: pId=...&per_pId=...&Memo=...
+// ---------------------------------------------------------
+function getPostWhere_ref(req, res, next) {
+   var whereStr = '';
+   if(req.body.pId)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " pId = " + req.body.pId.trim();
+   }
+   if(req.body.per_pId)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " per_pId = " + req.body.per_pId.trim();
+   }
+   if(req.body.Memo)
+   {
+      whereStr = makeWhere(whereStr);
+      whereStr += " Memo = " + req.body.Memo.trim();
+   }
+   var sqlStr = 'select * from ref ' + whereStr;
+
+    if (app.get('env') === 'development') {
+      console.log( sqlStr );
+    }
+    db.one(sqlStr)
+        .then(function (data) {
+            res.status(200)
+                .json({
+                    status: 'success',
+                    data: data,
+                    message: 'Retrieved ONE ref'
+                });
+        })
+        .catch(function (err) {
+            return next(err);
+    });
+}
+
+// ---------------------------------------------------------
 //  The function insert data into ref
 //  URL : POST /ref
 //  BODY:pId=...&per_pId=...&Memo=...
@@ -2657,6 +3386,7 @@ module.exports = {
   getAll_docSpec: getAll_docSpec,
   getSingle_docSpec: getSingle_docSpec,
   getWhere_docSpec: getWhere_docSpec,
+  getPostWhere_docSpec: getPostWhere_docSpec,
   create_docSpec: create_docSpec,
   update_docSpec: update_docSpec,
   remove_docSpec: remove_docSpec,
@@ -2664,6 +3394,7 @@ module.exports = {
   getAll_doc: getAll_doc,
   getSingle_doc: getSingle_doc,
   getWhere_doc: getWhere_doc,
+  getPostWhere_doc: getPostWhere_doc,
   create_doc: create_doc,
   update_doc: update_doc,
   remove_doc: remove_doc,
@@ -2671,6 +3402,7 @@ module.exports = {
   getAll_State: getAll_State,
   getSingle_State: getSingle_State,
   getWhere_State: getWhere_State,
+  getPostWhere_State: getPostWhere_State,
   create_State: create_State,
   update_State: update_State,
   remove_State: remove_State,
@@ -2678,6 +3410,7 @@ module.exports = {
   getAll_person: getAll_person,
   getSingle_person: getSingle_person,
   getWhere_person: getWhere_person,
+  getPostWhere_person: getPostWhere_person,
   create_person: create_person,
   update_person: update_person,
   remove_person: remove_person,
@@ -2685,6 +3418,7 @@ module.exports = {
   getAll_photoData: getAll_photoData,
   getSingle_photoData: getSingle_photoData,
   getWhere_photoData: getWhere_photoData,
+  getPostWhere_photoData: getPostWhere_photoData,
   create_photoData: create_photoData,
   update_photoData: update_photoData,
   remove_photoData: remove_photoData,
@@ -2692,6 +3426,7 @@ module.exports = {
   getAll_photoSpec: getAll_photoSpec,
   getSingle_photoSpec: getSingle_photoSpec,
   getWhere_photoSpec: getWhere_photoSpec,
+  getPostWhere_photoSpec: getPostWhere_photoSpec,
   create_photoSpec: create_photoSpec,
   update_photoSpec: update_photoSpec,
   remove_photoSpec: remove_photoSpec,
@@ -2699,6 +3434,7 @@ module.exports = {
   getAll_audioDatа: getAll_audioDatа,
   getSingle_audioDatа: getSingle_audioDatа,
   getWhere_audioDatа: getWhere_audioDatа,
+  getPostWhere_audioDatа: getPostWhere_audioDatа,
   create_audioDatа: create_audioDatа,
   update_audioDatа: update_audioDatа,
   remove_audioDatа: remove_audioDatа,
@@ -2706,6 +3442,7 @@ module.exports = {
   getAll_operator: getAll_operator,
   getSingle_operator: getSingle_operator,
   getWhere_operator: getWhere_operator,
+  getPostWhere_operator: getPostWhere_operator,
   create_operator: create_operator,
   update_operator: update_operator,
   remove_operator: remove_operator,
@@ -2713,6 +3450,7 @@ module.exports = {
   getAll_regPoint: getAll_regPoint,
   getSingle_regPoint: getSingle_regPoint,
   getWhere_regPoint: getWhere_regPoint,
+  getPostWhere_regPoint: getPostWhere_regPoint,
   create_regPoint: create_regPoint,
   update_regPoint: update_regPoint,
   remove_regPoint: remove_regPoint,
@@ -2720,6 +3458,7 @@ module.exports = {
   getAll_opRule: getAll_opRule,
   getSingle_opRule: getSingle_opRule,
   getWhere_opRule: getWhere_opRule,
+  getPostWhere_opRule: getPostWhere_opRule,
   create_opRule: create_opRule,
   update_opRule: update_opRule,
   remove_opRule: remove_opRule,
@@ -2727,6 +3466,7 @@ module.exports = {
   getAll_Contact: getAll_Contact,
   getSingle_Contact: getSingle_Contact,
   getWhere_Contact: getWhere_Contact,
+  getPostWhere_Contact: getPostWhere_Contact,
   create_Contact: create_Contact,
   update_Contact: update_Contact,
   remove_Contact: remove_Contact,
@@ -2734,6 +3474,7 @@ module.exports = {
   getAll_Agent: getAll_Agent,
   getSingle_Agent: getSingle_Agent,
   getWhere_Agent: getWhere_Agent,
+  getPostWhere_Agent: getPostWhere_Agent,
   create_Agent: create_Agent,
   update_Agent: update_Agent,
   remove_Agent: remove_Agent,
@@ -2741,6 +3482,7 @@ module.exports = {
   getAll_access: getAll_access,
   getSingle_access: getSingle_access,
   getWhere_access: getWhere_access,
+  getPostWhere_access: getPostWhere_access,
   create_access: create_access,
   update_access: update_access,
   remove_access: remove_access,
@@ -2748,6 +3490,7 @@ module.exports = {
   getAll_docImage: getAll_docImage,
   getSingle_docImage: getSingle_docImage,
   getWhere_docImage: getWhere_docImage,
+  getPostWhere_docImage: getPostWhere_docImage,
   create_docImage: create_docImage,
   update_docImage: update_docImage,
   remove_docImage: remove_docImage,
@@ -2755,6 +3498,7 @@ module.exports = {
   getAll_ref: getAll_ref,
   getSingle_ref: getSingle_ref,
   getWhere_ref: getWhere_ref,
+  getPostWhere_ref: getPostWhere_ref,
   create_ref: create_ref,
   update_ref: update_ref,
   remove_ref: remove_ref

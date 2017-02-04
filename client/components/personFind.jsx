@@ -8,49 +8,49 @@ const PersonFind = ({
   errors
 }) => (
   <Form horizontal onSubmit={ onSubmit }>
-    <FormGroup controlId="formHorizontalShortName">
+    <FormGroup controlId="personFindShortName">
         <Col componentClass={ControlLabel} sm={2}>
         Short name
         </Col>
         <Col sm={10}>
-        <FormControl type="text" placeholder="shortName" 
+        <FormControl type="text" placeholder="shortname" 
             onChange={onChange} 
         />
         </Col>
     </FormGroup>
 
-    <FormGroup controlId="formHorizontalFullName">
+    <FormGroup controlId="personFindFullName">
         <Col componentClass={ControlLabel} sm={2}>
         Full name
         </Col>
         <Col sm={10}>
-        <FormControl type="text" placeholder="fullName" 
+        <FormControl type="text" placeholder="fullname" 
             onChange={onChange} 
         />
         </Col>
     </FormGroup>
 
-    <FormGroup controlId="formHorizontalLegalName">
+    <FormGroup controlId="personFindLegalName">
         <Col componentClass={ControlLabel} sm={2}>
         Legal name
         </Col>
         <Col sm={10}>
-        <FormControl type="text" placeholder="legalName" 
+        <FormControl type="text" placeholder="legalname" 
             onChange={onChange} 
         />
         </Col>
     </FormGroup>
-    <FormGroup controlId="formHorizontalFullName">
+    <FormGroup controlId="personFindFullName">
         <Col componentClass={ControlLabel} sm={2}>
         Дата рождения
         </Col>
         <Col sm={10}>
-        <FormControl type="text" placeholder="bornDate" 
+        <FormControl type="text" placeholder="borndate" 
             onChange={onChange} 
         />
         </Col>
     </FormGroup>
-    <FormGroup controlId="formHorizontalFullName">
+    <FormGroup controlId="personFindFullName">
         <Col componentClass={ControlLabel} sm={2}>
         Пол
         </Col>

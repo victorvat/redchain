@@ -6,9 +6,7 @@ var options = {
 };
 
 var pgp = require('pg-promise')(options);
-var fs = require('fs');
-var ini = require('ini');
-var config = ini.parse(fs.readFileSync('./config.ini', 'utf-8'))
+var config = require('./server/config');
 var connectionString = config.database.connectionString;
 var db = pgp(connectionString);
 

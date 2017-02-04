@@ -5,10 +5,10 @@ class PersonRow extends React.Component {
    render() {
        const r = this.props.info; 
        return(
-            <Panel header={r.legalName}>
-                {r.fullName}
+            <Panel header={r.shortname}>
+                {r.fullhame}
                 <ListGroup fill>
-                    <ListGroupItem>{r.shortName}</ListGroupItem>
+                    <ListGroupItem>{r.legalname}</ListGroupItem>
                 </ListGroup>                
             </Panel>
        )

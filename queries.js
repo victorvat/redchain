@@ -14,136 +14,135 @@ var config = ini.parse(fs.readFileSync('./config.ini', 'utf-8'))
 var connectionString = config.database.connectionString;
 var db = pgp(connectionString);
 
-function makeWhere(whereStr)
-{
-   if(whereStr)
-   {
-      whereStr += "AND ";
-   } else {
-      whereStr = "WHERE ";
-   }
-   return whereStr;
-}
-
-// ---------------------------------------------------------
-//  The function retrieves ALL data from docSpec
-//  Be carefully !!
-//  URL : GET /docSpec/all
-//  BODY: without BODY !!!
-// ---------------------------------------------------------
-function getAll_docSpec(req, res, next) {
-    db.any('select * from docSpec')
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ALL from docSpec'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
-}
-
-// ---------------------------------------------------------
-//  The function retrieves data from docSpec via primary key
-//  URL : GET /docSpec/one/?cSpec=...
-//  BODY: without BODY !!!
-// ---------------------------------------------------------
-function getSingle_docSpec(req, res, next) {
-    var errStr = '';
-    if(!req.query.cSpec)
-        errStr += 'cSpec undefined! ';
-    if (errStr.length > 0)
+function makeWhere(whereStr) {
+    if(whereStr === undefined || whereStr.length == 0)
     {
-        next(new Error(errStr));
-        return;
+        whereStr = " WHERE ";
+    } else {
+        whereStr += " AND ";
     }
-    db.one('select * from docSpec where cSpec = $1',req.query.cSpec)
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ONE docSpec'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
+    return whereStr;
 }
 
-// ---------------------------------------------------------
-//  The function retrieves data from docSpec using WHERE clause
-//  URL : GET /docSpec/any/?spec=...&spec_en=...
-//  BODY: without BODY !!!
-// ---------------------------------------------------------
-function getWhere_docSpec(req, res, next) {
-   var whereStr = '';
-   if(req.query.spec)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " spec LIKE '%" + req.query.spec.trim() + "%'";
-   }
-   if(req.query.spec_en)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " spec_en LIKE '%" + req.query.spec_en.trim() + "%'";
-   }
-    if(whereStr.length==0)
+function makeList(listStr) {
+    if(listStr === undefined || listStr.length == 0)
     {
-        next(new Error("No any predicates!"));
-        return;
+        listStr = '';
+    } else {
+        listStr += ", ";
     }
-    db.one('select * from docSpec ' + whereStr)
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ONE docSpec'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
+    return listStr;
 }
 
-// ---------------------------------------------------------
-//  The function retrieves data from docSpec using WHERE clause
-//  URL : POST /docSpec/query/
-//  BODY: cSpec=...&spec=...&spec_en=...
-// ---------------------------------------------------------
-function getPostWhere_docSpec(req, res, next) {
-   var whereStr = '';
-   if(req.body.cSpec)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " cSpec = " + req.body.cSpec.trim();
-   }
-   if(req.body.spec)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " spec LIKE '%" + req.body.spec.trim() + "%'";
-   }
-   if(req.body.spec_en)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " spec_en LIKE '%" + req.body.spec_en.trim() + "%'";
-   }
-   var sqlStr = 'select * from docSpec ' + whereStr;
+function makeSet(setStr) {
+    if(setStr === undefined || setStr.length == 0)
+    {
+        setStr = 'SET ';
+    } else {
+        setStr += ", ";
+    }
+    return setStr;
+}
 
+var docSpec_collist_all = ['cspec','spec','spec_en'];
+function docSpec_HasColname(colname) {
+    return (docSpec_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
+}
+
+var docSpec_collist_keys = ['cspec'];
+function docSpec_HasKeyname(keyname) {
+    return (docSpec_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
+}
+
+function docSpec_makeWhere(req, next) {
+    var whereStr = '';
+    if(req.body.params === undefined)
+        return whereStr;
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(docSpec_HasColname(parstr)) {
+            switch(parstr) {
+            case 'cspec':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " cspec = ${" + parnext + "}";
+                }
+                break;
+            case 'spec':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " spec LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
+                }
+                break;
+            case 'spec_en':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " spec_en LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
+                }
+                break;
+            }
+        } else {
+            next(new Error('column ' + parnext + " not exists in docspec!"));
+            return "ERROR";
+        }
+    }
+    return whereStr;
+}
+
+function docSpec_DoSelect(req, res, next) {
+    var whereStr = docSpec_makeWhere(req, next);
+    if(whereStr == "ERROR")
+        return;
+    var sqlStr = 'SELECT * FROM docspec ' + whereStr;
     if (app.get('env') === 'development') {
-      console.log( sqlStr );
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
     }
-    db.one(sqlStr)
+    db.any(sqlStr, req.body.params)
         .then(function (data) {
             res.status(200)
                 .json({
                     status: 'success',
                     data: data,
-                    message: 'Retrieved ONE docSpec'
+                    message: 'Retrieved from docspec'
+            });
+        })
+        .catch(function (err) {
+            return next(err);
+    });
+}
+
+function docSpec_DoInsert(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('insert params not found!'));
+    }
+    var parList = '';
+    var parValues = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(docSpec_HasColname(parstr)) {
+            parList = makeList(parList);
+            parList += parstr;
+            parValues = makeList(parValues);
+            parValues += "${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " not exists in docspec!"));
+        }
+    }
+    if(parList.length == 0)
+        return next(new Error('not found any fields for insert into docspec!'));
+    var sqlStr = "INSERT INTO docspec(" + parList + ") VALUES (" + parValues + ") RETURNING cspec";
+    if (app.get('env') === 'development') {
+       // console.log( sqlStr );
+       console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.one(sqlStr, req.body.params)
+        .then(function (data) {
+            res.status(200)
+                .json({
+                    status: 'success',
+                    data: data,
+                    message: 'Inserted into docspec'
                 });
         })
         .catch(function (err) {
@@ -151,21 +150,39 @@ function getPostWhere_docSpec(req, res, next) {
     });
 }
 
-// ---------------------------------------------------------
-//  The function insert data into docSpec
-//  URL : POST /docSpec
-//  BODY:spec=...&spec_en=...
-// ---------------------------------------------------------
-function create_docSpec(req, res, next) {
-    db.one('insert into docSpec(spec,spec_en)' +
-            'values(${spec},${spec_en}) returning cSpec',
-             req.body)
-        .then(function (data) {
+function docSpec_DoUpdate(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('update params not found!'));
+    }
+    var setStr = '';
+    var whereStr = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(docSpec_HasKeyname(parstr)) {
+            whereStr = makeWhere(whereStr);
+            whereStr += parstr + "=${" + parnext + "}";
+        } else if(docSpec_HasColname(parstr)) {
+            setStr = makeSet(setStr);
+            setStr += parstr + "=${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " not exists in docspec!"));
+        }
+    }
+    if(setStr.length == 0)
+        return next(new Error('not found any fields for update the docspec!'));
+    if(whereStr.length == 0)
+        return next(new Error('not found any keys for update the docspec!'));
+    var sqlStr = "UPDATE docspec " + setStr + " " + whereStr;
+    if (app.get('env') === 'development') {
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.result(sqlStr, req.body.params)
+        .then(function (result) {
             res.status(200)
                 .json({
                     status: 'success',
-                    data: data,
-                    message: 'Inserted one docSpec'
+                    message: `Updated ${result.rowCount} from docspec`
                 });
         })
         .catch(function (err) {
@@ -173,55 +190,34 @@ function create_docSpec(req, res, next) {
     });
 }
 
-// ---------------------------------------------------------
-//  The function update data in docSpec
-//  URL : PUT /docSpec
-//  BODY: cSpec=...&spec=...&spec_en=...
-// ---------------------------------------------------------
-function update_docSpec(req, res, next) {
-    var errStr = '';
-    if(!req.body.cSpec)
-        errStr += 'cSpec undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+function docSpec_DoDelete(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('delete params not found!'));
     }
-    db.none('update docSpec set spec=${spec}, spec_en=${spec_en} where cSpec=${cSpec}',
-             req.body)
-        .then(function () {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    message: 'Updated docSpec'
-                });
-        })
-        .catch(function (err) {
-      return next(err);
-    });
-}
-
-// ---------------------------------------------------------
-//  The function deletes data from docSpec
-//  URL : DELETE /docSpec/
-//  BODY: cSpec=...
-// ---------------------------------------------------------
-function remove_docSpec(req, res, next) {
-    var errStr = '';
-    if(!req.body.cSpec)
-        errStr += 'cSpec undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+    var whereStr = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(docSpec_HasKeyname(parstr)) {
+            whereStr = makeWhere(whereStr);
+            whereStr += parstr + "=${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " is not key columns in docspec!"));
+        }
     }
-    db.result('delete from docSpec where cSpec = $1',req.body.cSpec)
+    if(whereStr.length == 0)
+        return next(new Error('not found any keys for delete from the docspec!'));
+    var sqlStr = "DELETE FROM docspec " + whereStr;
+    if (app.get('env') === 'development') {
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.result(sqlStr, req.body.params)
         .then(function (result) {
             /* jshint ignore:start */
             res.status(200)
                 .json({
-                status: 'success',
-                message: `Removed ${result.rowCount} docSpec`
+                    status: 'success',
+                    message: `Removed ${result.rowCount} from docspec`
             });
             /* jshint ignore:end */
         })
@@ -230,186 +226,177 @@ function remove_docSpec(req, res, next) {
     });
 }
 
-
 // ---------------------------------------------------------
-//  The function retrieves ALL data from doc
-//  Be carefully !!
-//  URL : GET /doc/all
-//  BODY: without BODY !!!
+//  The function makes SQL for the docSpec from the body
+//  URL : POST /docSpec/
+//  BODY: 
+//  {
+//     "cmd": "select" or "insert" or "update or "delete",
+//     "row_count": ... ,
+//     "params": {
+//         "cSpec":...,
+//         "spec":"...",
+//         "spec_en":"..."
+//      }
+//  }
 // ---------------------------------------------------------
-function getAll_doc(req, res, next) {
-    db.any('select * from doc')
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ALL from doc'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
-}
-
-// ---------------------------------------------------------
-//  The function retrieves data from doc via primary key
-//  URL : GET /doc/one/?cDoc=...
-//  BODY: without BODY !!!
-// ---------------------------------------------------------
-function getSingle_doc(req, res, next) {
-    var errStr = '';
-    if(!req.query.cDoc)
-        errStr += 'cDoc undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+function docSpec_makeQuery(req, res, next) {
+    if( req.body.cmd === undefined )
+        return next( new Error('keyword cmd not found in the body!'));
+    switch(req.body.cmd.toString().toLowerCase()) {
+    case 'select':
+        docSpec_DoSelect(req, res, next);
+        break;
+    case 'insert':
+        docSpec_DoInsert(req, res, next);
+        break;
+    case 'update':
+        docSpec_DoUpdate(req, res, next);
+        break;
+    case 'delete':
+        docSpec_DoDelete(req, res, next);
+        break;
+    default:
+        return next( new Error('cmd ' + req.body.cmd + " is unknow!"));
     }
-    db.one('select * from doc where cDoc = $1',req.query.cDoc)
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ONE doc'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
 }
 
-// ---------------------------------------------------------
-//  The function retrieves data from doc using WHERE clause
-//  URL : GET /doc/any/?cSpec=...&pId=...&cState=...&docN=...&docDate=...&docEnd=...&docAuth=...&Memo=...
-//  BODY: without BODY !!!
-// ---------------------------------------------------------
-function getWhere_doc(req, res, next) {
-   var whereStr = '';
-   if(req.query.cSpec)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " cSpec = " + req.query.cSpec.trim();
-   }
-   if(req.query.pId)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " pId = " + req.query.pId.trim();
-   }
-   if(req.query.cState)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " cState = " + req.query.cState.trim();
-   }
-   if(req.query.docN)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " docN LIKE '%" + req.query.docN.trim() + "%'";
-   }
-   if(req.query.docDate)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " docDate = '" + req.query.docDate.trim() + "'";
-   }
-   if(req.query.docEnd)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " docEnd = '" + req.query.docEnd.trim() + "'";
-   }
-   if(req.query.docAuth)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " docAuth LIKE '%" + req.query.docAuth.trim() + "%'";
-   }
-   if(req.query.Memo)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " Memo = " + req.query.Memo.trim();
-   }
-    if(whereStr.length==0)
-    {
-        next(new Error("No any predicates!"));
-        return;
+
+var doc_collist_all = ['cdoc','cspec','pid','cstate','docn','docdate','docend','docauth','memo'];
+function doc_HasColname(colname) {
+    return (doc_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
+}
+
+var doc_collist_keys = ['cdoc'];
+function doc_HasKeyname(keyname) {
+    return (doc_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
+}
+
+function doc_makeWhere(req, next) {
+    var whereStr = '';
+    if(req.body.params === undefined)
+        return whereStr;
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(doc_HasColname(parstr)) {
+            switch(parstr) {
+            case 'cdoc':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " cdoc = ${" + parnext + "}";
+                }
+                break;
+            case 'cspec':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " cspec = ${" + parnext + "}";
+                }
+                break;
+            case 'pid':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " pid = ${" + parnext + "}";
+                }
+                break;
+            case 'cstate':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " cstate = ${" + parnext + "}";
+                }
+                break;
+            case 'docn':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " docn LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
+                }
+                break;
+            case 'docdate':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " docdate = ${" + parnext + "}";
+                }
+                break;
+            case 'docend':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " docend = ${" + parnext + "}";
+                }
+                break;
+            case 'docauth':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " docauth LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
+                }
+                break;
+            case 'memo':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " memo = ${" + parnext + "}";
+                }
+                break;
+            }
+        } else {
+            next(new Error('column ' + parnext + " not exists in doc!"));
+            return "ERROR";
+        }
     }
-    db.one('select * from doc ' + whereStr)
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ONE doc'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
+    return whereStr;
 }
 
-// ---------------------------------------------------------
-//  The function retrieves data from doc using WHERE clause
-//  URL : POST /doc/query/
-//  BODY: cDoc=...&cSpec=...&pId=...&cState=...&docN=...&docDate=...&docEnd=...&docAuth=...&Memo=...
-// ---------------------------------------------------------
-function getPostWhere_doc(req, res, next) {
-   var whereStr = '';
-   if(req.body.cDoc)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " cDoc = " + req.body.cDoc.trim();
-   }
-   if(req.body.cSpec)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " cSpec = " + req.body.cSpec.trim();
-   }
-   if(req.body.pId)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " pId = " + req.body.pId.trim();
-   }
-   if(req.body.cState)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " cState = " + req.body.cState.trim();
-   }
-   if(req.body.docN)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " docN LIKE '%" + req.body.docN.trim() + "%'";
-   }
-   if(req.body.docDate)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " docDate = '" + req.body.docDate.trim() + "'";
-   }
-   if(req.body.docEnd)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " docEnd = '" + req.body.docEnd.trim() + "'";
-   }
-   if(req.body.docAuth)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " docAuth LIKE '%" + req.body.docAuth.trim() + "%'";
-   }
-   if(req.body.Memo)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " Memo = " + req.body.Memo.trim();
-   }
-   var sqlStr = 'select * from doc ' + whereStr;
-
+function doc_DoSelect(req, res, next) {
+    var whereStr = doc_makeWhere(req, next);
+    if(whereStr == "ERROR")
+        return;
+    var sqlStr = 'SELECT * FROM doc ' + whereStr;
     if (app.get('env') === 'development') {
-      console.log( sqlStr );
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
     }
-    db.one(sqlStr)
+    db.any(sqlStr, req.body.params)
         .then(function (data) {
             res.status(200)
                 .json({
                     status: 'success',
                     data: data,
-                    message: 'Retrieved ONE doc'
+                    message: 'Retrieved from doc'
+            });
+        })
+        .catch(function (err) {
+            return next(err);
+    });
+}
+
+function doc_DoInsert(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('insert params not found!'));
+    }
+    var parList = '';
+    var parValues = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(doc_HasColname(parstr)) {
+            parList = makeList(parList);
+            parList += parstr;
+            parValues = makeList(parValues);
+            parValues += "${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " not exists in doc!"));
+        }
+    }
+    if(parList.length == 0)
+        return next(new Error('not found any fields for insert into doc!'));
+    var sqlStr = "INSERT INTO doc(" + parList + ") VALUES (" + parValues + ") RETURNING cdoc";
+    if (app.get('env') === 'development') {
+       // console.log( sqlStr );
+       console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.one(sqlStr, req.body.params)
+        .then(function (data) {
+            res.status(200)
+                .json({
+                    status: 'success',
+                    data: data,
+                    message: 'Inserted into doc'
                 });
         })
         .catch(function (err) {
@@ -417,21 +404,39 @@ function getPostWhere_doc(req, res, next) {
     });
 }
 
-// ---------------------------------------------------------
-//  The function insert data into doc
-//  URL : POST /doc
-//  BODY:cSpec=...&pId=...&cState=...&docN=...&docDate=...&docEnd=...&docAuth=...&Memo=...
-// ---------------------------------------------------------
-function create_doc(req, res, next) {
-    db.one('insert into doc(cSpec,pId,cState,docN,docDate,docEnd,docAuth,Memo)' +
-            'values(${cSpec},${pId},${cState},${docN},${docDate},${docEnd},${docAuth},${Memo}) returning cDoc',
-             req.body)
-        .then(function (data) {
+function doc_DoUpdate(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('update params not found!'));
+    }
+    var setStr = '';
+    var whereStr = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(doc_HasKeyname(parstr)) {
+            whereStr = makeWhere(whereStr);
+            whereStr += parstr + "=${" + parnext + "}";
+        } else if(doc_HasColname(parstr)) {
+            setStr = makeSet(setStr);
+            setStr += parstr + "=${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " not exists in doc!"));
+        }
+    }
+    if(setStr.length == 0)
+        return next(new Error('not found any fields for update the doc!'));
+    if(whereStr.length == 0)
+        return next(new Error('not found any keys for update the doc!'));
+    var sqlStr = "UPDATE doc " + setStr + " " + whereStr;
+    if (app.get('env') === 'development') {
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.result(sqlStr, req.body.params)
+        .then(function (result) {
             res.status(200)
                 .json({
                     status: 'success',
-                    data: data,
-                    message: 'Inserted one doc'
+                    message: `Updated ${result.rowCount} from doc`
                 });
         })
         .catch(function (err) {
@@ -439,55 +444,34 @@ function create_doc(req, res, next) {
     });
 }
 
-// ---------------------------------------------------------
-//  The function update data in doc
-//  URL : PUT /doc
-//  BODY: cDoc=...&cSpec=...&pId=...&cState=...&docN=...&docDate=...&docEnd=...&docAuth=...&Memo=...
-// ---------------------------------------------------------
-function update_doc(req, res, next) {
-    var errStr = '';
-    if(!req.body.cDoc)
-        errStr += 'cDoc undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+function doc_DoDelete(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('delete params not found!'));
     }
-    db.none('update doc set cSpec=${cSpec}, pId=${pId}, cState=${cState}, docN=${docN}, docDate=${docDate}, docEnd=${docEnd}, docAuth=${docAuth}, Memo=${Memo} where cDoc=${cDoc}',
-             req.body)
-        .then(function () {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    message: 'Updated doc'
-                });
-        })
-        .catch(function (err) {
-      return next(err);
-    });
-}
-
-// ---------------------------------------------------------
-//  The function deletes data from doc
-//  URL : DELETE /doc/
-//  BODY: cDoc=...
-// ---------------------------------------------------------
-function remove_doc(req, res, next) {
-    var errStr = '';
-    if(!req.body.cDoc)
-        errStr += 'cDoc undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+    var whereStr = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(doc_HasKeyname(parstr)) {
+            whereStr = makeWhere(whereStr);
+            whereStr += parstr + "=${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " is not key columns in doc!"));
+        }
     }
-    db.result('delete from doc where cDoc = $1',req.body.cDoc)
+    if(whereStr.length == 0)
+        return next(new Error('not found any keys for delete from the doc!'));
+    var sqlStr = "DELETE FROM doc " + whereStr;
+    if (app.get('env') === 'development') {
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.result(sqlStr, req.body.params)
         .then(function (result) {
             /* jshint ignore:start */
             res.status(200)
                 .json({
-                status: 'success',
-                message: `Removed ${result.rowCount} doc`
+                    status: 'success',
+                    message: `Removed ${result.rowCount} from doc`
             });
             /* jshint ignore:end */
         })
@@ -496,126 +480,147 @@ function remove_doc(req, res, next) {
     });
 }
 
-
 // ---------------------------------------------------------
-//  The function retrieves ALL data from State
-//  Be carefully !!
-//  URL : GET /State/all
-//  BODY: without BODY !!!
+//  The function makes SQL for the doc from the body
+//  URL : POST /doc/
+//  BODY: 
+//  {
+//     "cmd": "select" or "insert" or "update or "delete",
+//     "row_count": ... ,
+//     "params": {
+//         "cDoc":...,
+//         "cSpec":...,
+//         "pId":"...",
+//         "cState":...,
+//         "docN":"...",
+//         "docDate":"...",
+//         "docEnd":"...",
+//         "docAuth":"...",
+//         "Memo":"..."
+//      }
+//  }
 // ---------------------------------------------------------
-function getAll_State(req, res, next) {
-    db.any('select * from State')
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ALL from State'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
-}
-
-// ---------------------------------------------------------
-//  The function retrieves data from State via primary key
-//  URL : GET /State/one/?cState=...
-//  BODY: without BODY !!!
-// ---------------------------------------------------------
-function getSingle_State(req, res, next) {
-    var errStr = '';
-    if(!req.query.cState)
-        errStr += 'cState undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+function doc_makeQuery(req, res, next) {
+    if( req.body.cmd === undefined )
+        return next( new Error('keyword cmd not found in the body!'));
+    switch(req.body.cmd.toString().toLowerCase()) {
+    case 'select':
+        doc_DoSelect(req, res, next);
+        break;
+    case 'insert':
+        doc_DoInsert(req, res, next);
+        break;
+    case 'update':
+        doc_DoUpdate(req, res, next);
+        break;
+    case 'delete':
+        doc_DoDelete(req, res, next);
+        break;
+    default:
+        return next( new Error('cmd ' + req.body.cmd + " is unknow!"));
     }
-    db.one('select * from State where cState = $1',req.query.cState)
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ONE State'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
 }
 
-// ---------------------------------------------------------
-//  The function retrieves data from State using WHERE clause
-//  URL : GET /State/any/?State=...&State_en=...
-//  BODY: without BODY !!!
-// ---------------------------------------------------------
-function getWhere_State(req, res, next) {
-   var whereStr = '';
-   if(req.query.State)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " State LIKE '%" + req.query.State.trim() + "%'";
-   }
-   if(req.query.State_en)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " State_en LIKE '%" + req.query.State_en.trim() + "%'";
-   }
-    if(whereStr.length==0)
-    {
-        next(new Error("No any predicates!"));
-        return;
+
+var State_collist_all = ['cstate','state','state_en'];
+function State_HasColname(colname) {
+    return (State_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
+}
+
+var State_collist_keys = ['cstate'];
+function State_HasKeyname(keyname) {
+    return (State_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
+}
+
+function State_makeWhere(req, next) {
+    var whereStr = '';
+    if(req.body.params === undefined)
+        return whereStr;
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(State_HasColname(parstr)) {
+            switch(parstr) {
+            case 'cstate':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " cstate = ${" + parnext + "}";
+                }
+                break;
+            case 'state':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " state LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
+                }
+                break;
+            case 'state_en':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " state_en LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
+                }
+                break;
+            }
+        } else {
+            next(new Error('column ' + parnext + " not exists in state!"));
+            return "ERROR";
+        }
     }
-    db.one('select * from State ' + whereStr)
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ONE State'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
+    return whereStr;
 }
 
-// ---------------------------------------------------------
-//  The function retrieves data from State using WHERE clause
-//  URL : POST /State/query/
-//  BODY: cState=...&State=...&State_en=...
-// ---------------------------------------------------------
-function getPostWhere_State(req, res, next) {
-   var whereStr = '';
-   if(req.body.cState)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " cState = " + req.body.cState.trim();
-   }
-   if(req.body.State)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " State LIKE '%" + req.body.State.trim() + "%'";
-   }
-   if(req.body.State_en)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " State_en LIKE '%" + req.body.State_en.trim() + "%'";
-   }
-   var sqlStr = 'select * from State ' + whereStr;
-
+function State_DoSelect(req, res, next) {
+    var whereStr = State_makeWhere(req, next);
+    if(whereStr == "ERROR")
+        return;
+    var sqlStr = 'SELECT * FROM state ' + whereStr;
     if (app.get('env') === 'development') {
-      console.log( sqlStr );
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
     }
-    db.one(sqlStr)
+    db.any(sqlStr, req.body.params)
         .then(function (data) {
             res.status(200)
                 .json({
                     status: 'success',
                     data: data,
-                    message: 'Retrieved ONE State'
+                    message: 'Retrieved from state'
+            });
+        })
+        .catch(function (err) {
+            return next(err);
+    });
+}
+
+function State_DoInsert(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('insert params not found!'));
+    }
+    var parList = '';
+    var parValues = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(State_HasColname(parstr)) {
+            parList = makeList(parList);
+            parList += parstr;
+            parValues = makeList(parValues);
+            parValues += "${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " not exists in state!"));
+        }
+    }
+    if(parList.length == 0)
+        return next(new Error('not found any fields for insert into state!'));
+    var sqlStr = "INSERT INTO state(" + parList + ") VALUES (" + parValues + ") RETURNING cstate";
+    if (app.get('env') === 'development') {
+       // console.log( sqlStr );
+       console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.one(sqlStr, req.body.params)
+        .then(function (data) {
+            res.status(200)
+                .json({
+                    status: 'success',
+                    data: data,
+                    message: 'Inserted into state'
                 });
         })
         .catch(function (err) {
@@ -623,21 +628,39 @@ function getPostWhere_State(req, res, next) {
     });
 }
 
-// ---------------------------------------------------------
-//  The function insert data into State
-//  URL : POST /State
-//  BODY:State=...&State_en=...
-// ---------------------------------------------------------
-function create_State(req, res, next) {
-    db.one('insert into State(State,State_en)' +
-            'values(${State},${State_en}) returning cState',
-             req.body)
-        .then(function (data) {
+function State_DoUpdate(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('update params not found!'));
+    }
+    var setStr = '';
+    var whereStr = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(State_HasKeyname(parstr)) {
+            whereStr = makeWhere(whereStr);
+            whereStr += parstr + "=${" + parnext + "}";
+        } else if(State_HasColname(parstr)) {
+            setStr = makeSet(setStr);
+            setStr += parstr + "=${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " not exists in state!"));
+        }
+    }
+    if(setStr.length == 0)
+        return next(new Error('not found any fields for update the state!'));
+    if(whereStr.length == 0)
+        return next(new Error('not found any keys for update the state!'));
+    var sqlStr = "UPDATE state " + setStr + " " + whereStr;
+    if (app.get('env') === 'development') {
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.result(sqlStr, req.body.params)
+        .then(function (result) {
             res.status(200)
                 .json({
                     status: 'success',
-                    data: data,
-                    message: 'Inserted one State'
+                    message: `Updated ${result.rowCount} from state`
                 });
         })
         .catch(function (err) {
@@ -645,55 +668,34 @@ function create_State(req, res, next) {
     });
 }
 
-// ---------------------------------------------------------
-//  The function update data in State
-//  URL : PUT /State
-//  BODY: cState=...&State=...&State_en=...
-// ---------------------------------------------------------
-function update_State(req, res, next) {
-    var errStr = '';
-    if(!req.body.cState)
-        errStr += 'cState undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+function State_DoDelete(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('delete params not found!'));
     }
-    db.none('update State set State=${State}, State_en=${State_en} where cState=${cState}',
-             req.body)
-        .then(function () {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    message: 'Updated State'
-                });
-        })
-        .catch(function (err) {
-      return next(err);
-    });
-}
-
-// ---------------------------------------------------------
-//  The function deletes data from State
-//  URL : DELETE /State/
-//  BODY: cState=...
-// ---------------------------------------------------------
-function remove_State(req, res, next) {
-    var errStr = '';
-    if(!req.body.cState)
-        errStr += 'cState undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+    var whereStr = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(State_HasKeyname(parstr)) {
+            whereStr = makeWhere(whereStr);
+            whereStr += parstr + "=${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " is not key columns in state!"));
+        }
     }
-    db.result('delete from State where cState = $1',req.body.cState)
+    if(whereStr.length == 0)
+        return next(new Error('not found any keys for delete from the state!'));
+    var sqlStr = "DELETE FROM state " + whereStr;
+    if (app.get('env') === 'development') {
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.result(sqlStr, req.body.params)
         .then(function (result) {
             /* jshint ignore:start */
             res.status(200)
                 .json({
-                status: 'success',
-                message: `Removed ${result.rowCount} State`
+                    status: 'success',
+                    message: `Removed ${result.rowCount} from state`
             });
             /* jshint ignore:end */
         })
@@ -702,166 +704,164 @@ function remove_State(req, res, next) {
     });
 }
 
-
 // ---------------------------------------------------------
-//  The function retrieves ALL data from person
-//  Be carefully !!
-//  URL : GET /person/all
-//  BODY: without BODY !!!
+//  The function makes SQL for the State from the body
+//  URL : POST /State/
+//  BODY: 
+//  {
+//     "cmd": "select" or "insert" or "update or "delete",
+//     "row_count": ... ,
+//     "params": {
+//         "cState":...,
+//         "State":"...",
+//         "State_en":"..."
+//      }
+//  }
 // ---------------------------------------------------------
-function getAll_person(req, res, next) {
-    db.any('select * from person')
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ALL from person'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
-}
-
-// ---------------------------------------------------------
-//  The function retrieves data from person via primary key
-//  URL : GET /person/one/?pId=...
-//  BODY: without BODY !!!
-// ---------------------------------------------------------
-function getSingle_person(req, res, next) {
-    var errStr = '';
-    if(!req.query.pId)
-        errStr += 'pId undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+function State_makeQuery(req, res, next) {
+    if( req.body.cmd === undefined )
+        return next( new Error('keyword cmd not found in the body!'));
+    switch(req.body.cmd.toString().toLowerCase()) {
+    case 'select':
+        State_DoSelect(req, res, next);
+        break;
+    case 'insert':
+        State_DoInsert(req, res, next);
+        break;
+    case 'update':
+        State_DoUpdate(req, res, next);
+        break;
+    case 'delete':
+        State_DoDelete(req, res, next);
+        break;
+    default:
+        return next( new Error('cmd ' + req.body.cmd + " is unknow!"));
     }
-    db.one('select * from person where pId = $1',req.query.pId)
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ONE person'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
 }
 
-// ---------------------------------------------------------
-//  The function retrieves data from person using WHERE clause
-//  URL : GET /person/any/?cState=...&shortName=...&fullName=...&legalName=...&bornDate=...&sexId=...
-//  BODY: without BODY !!!
-// ---------------------------------------------------------
-function getWhere_person(req, res, next) {
-   var whereStr = '';
-   if(req.query.cState)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " cState = " + req.query.cState.trim();
-   }
-   if(req.query.shortName)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " shortName LIKE '%" + req.query.shortName.trim() + "%'";
-   }
-   if(req.query.fullName)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " fullName LIKE '%" + req.query.fullName.trim() + "%'";
-   }
-   if(req.query.legalName)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " legalName LIKE '%" + req.query.legalName.trim() + "%'";
-   }
-   if(req.query.bornDate)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " bornDate = '" + req.query.bornDate.trim() + "'";
-   }
-   if(req.query.sexId)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " sexId = " + req.query.sexId.trim();
-   }
-    if(whereStr.length==0)
-    {
-        next(new Error("No any predicates!"));
-        return;
+
+var person_collist_all = ['pid','cstate','shortname','fullname','legalname','borndate','sexid'];
+function person_HasColname(colname) {
+    return (person_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
+}
+
+var person_collist_keys = ['pid'];
+function person_HasKeyname(keyname) {
+    return (person_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
+}
+
+function person_makeWhere(req, next) {
+    var whereStr = '';
+    if(req.body.params === undefined)
+        return whereStr;
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(person_HasColname(parstr)) {
+            switch(parstr) {
+            case 'pid':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " pid = ${" + parnext + "}";
+                }
+                break;
+            case 'cstate':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " cstate = ${" + parnext + "}";
+                }
+                break;
+            case 'shortname':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " shortname LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
+                }
+                break;
+            case 'fullname':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " fullname LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
+                }
+                break;
+            case 'legalname':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " legalname LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
+                }
+                break;
+            case 'borndate':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " borndate = ${" + parnext + "}";
+                }
+                break;
+            case 'sexid':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " sexid = ${" + parnext + "}";
+                }
+                break;
+            }
+        } else {
+            next(new Error('column ' + parnext + " not exists in person!"));
+            return "ERROR";
+        }
     }
-    db.one('select * from person ' + whereStr)
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ONE person'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
+    return whereStr;
 }
 
-// ---------------------------------------------------------
-//  The function retrieves data from person using WHERE clause
-//  URL : POST /person/query/
-//  BODY: pId=...&cState=...&shortName=...&fullName=...&legalName=...&bornDate=...&sexId=...
-// ---------------------------------------------------------
-function getPostWhere_person(req, res, next) {
-   var whereStr = '';
-   if(req.body.pId)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " pId = " + req.body.pId.trim();
-   }
-   if(req.body.cState)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " cState = " + req.body.cState.trim();
-   }
-   if(req.body.shortName)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " shortName LIKE '%" + req.body.shortName.trim() + "%'";
-   }
-   if(req.body.fullName)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " fullName LIKE '%" + req.body.fullName.trim() + "%'";
-   }
-   if(req.body.legalName)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " legalName LIKE '%" + req.body.legalName.trim() + "%'";
-   }
-   if(req.body.bornDate)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " bornDate = '" + req.body.bornDate.trim() + "'";
-   }
-   if(req.body.sexId)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " sexId = " + req.body.sexId.trim();
-   }
-   var sqlStr = 'select * from person ' + whereStr;
-
+function person_DoSelect(req, res, next) {
+    var whereStr = person_makeWhere(req, next);
+    if(whereStr == "ERROR")
+        return;
+    var sqlStr = 'SELECT * FROM person ' + whereStr;
     if (app.get('env') === 'development') {
-      console.log( sqlStr );
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
     }
-    db.one(sqlStr)
+    db.any(sqlStr, req.body.params)
         .then(function (data) {
             res.status(200)
                 .json({
                     status: 'success',
                     data: data,
-                    message: 'Retrieved ONE person'
+                    message: 'Retrieved from person'
+            });
+        })
+        .catch(function (err) {
+            return next(err);
+    });
+}
+
+function person_DoInsert(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('insert params not found!'));
+    }
+    var parList = '';
+    var parValues = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(person_HasColname(parstr)) {
+            parList = makeList(parList);
+            parList += parstr;
+            parValues = makeList(parValues);
+            parValues += "${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " not exists in person!"));
+        }
+    }
+    if(parList.length == 0)
+        return next(new Error('not found any fields for insert into person!'));
+    var sqlStr = "INSERT INTO person(" + parList + ") VALUES (" + parValues + ")";
+    if (app.get('env') === 'development') {
+       // console.log( sqlStr );
+       console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.none(sqlStr, req.body.params)
+        .then(function () {
+            res.status(200)
+                .json({
+                    status: 'success',
+                    message: 'Inserted into person'
                 });
         })
         .catch(function (err) {
@@ -869,28 +869,39 @@ function getPostWhere_person(req, res, next) {
     });
 }
 
-// ---------------------------------------------------------
-//  The function insert data into person
-//  URL : POST /person
-//  BODY:pId=...&cState=...&shortName=...&fullName=...&legalName=...&bornDate=...&sexId=...
-// ---------------------------------------------------------
-function create_person(req, res, next) {
-    var errStr = '';
-    if(!req.body.pId)
-        errStr += 'pId undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+function person_DoUpdate(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('update params not found!'));
     }
-    db.none('insert into person(pId,cState,shortName,fullName,legalName,bornDate,sexId)' +
-            'values(${pId},${cState},${shortName},${fullName},${legalName},${bornDate},${sexId})',
-             req.body)
-        .then(function () {
+    var setStr = '';
+    var whereStr = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(person_HasKeyname(parstr)) {
+            whereStr = makeWhere(whereStr);
+            whereStr += parstr + "=${" + parnext + "}";
+        } else if(person_HasColname(parstr)) {
+            setStr = makeSet(setStr);
+            setStr += parstr + "=${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " not exists in person!"));
+        }
+    }
+    if(setStr.length == 0)
+        return next(new Error('not found any fields for update the person!'));
+    if(whereStr.length == 0)
+        return next(new Error('not found any keys for update the person!'));
+    var sqlStr = "UPDATE person " + setStr + " " + whereStr;
+    if (app.get('env') === 'development') {
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.result(sqlStr, req.body.params)
+        .then(function (result) {
             res.status(200)
                 .json({
                     status: 'success',
-                    message: 'Inserted one person'
+                    message: `Updated ${result.rowCount} from person`
                 });
         })
         .catch(function (err) {
@@ -898,55 +909,34 @@ function create_person(req, res, next) {
     });
 }
 
-// ---------------------------------------------------------
-//  The function update data in person
-//  URL : PUT /person
-//  BODY: pId=...&cState=...&shortName=...&fullName=...&legalName=...&bornDate=...&sexId=...
-// ---------------------------------------------------------
-function update_person(req, res, next) {
-    var errStr = '';
-    if(!req.body.pId)
-        errStr += 'pId undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+function person_DoDelete(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('delete params not found!'));
     }
-    db.none('update person set cState=${cState}, shortName=${shortName}, fullName=${fullName}, legalName=${legalName}, bornDate=${bornDate}, sexId=${sexId} where pId=${pId}',
-             req.body)
-        .then(function () {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    message: 'Updated person'
-                });
-        })
-        .catch(function (err) {
-      return next(err);
-    });
-}
-
-// ---------------------------------------------------------
-//  The function deletes data from person
-//  URL : DELETE /person/
-//  BODY: pId=...
-// ---------------------------------------------------------
-function remove_person(req, res, next) {
-    var errStr = '';
-    if(!req.body.pId)
-        errStr += 'pId undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+    var whereStr = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(person_HasKeyname(parstr)) {
+            whereStr = makeWhere(whereStr);
+            whereStr += parstr + "=${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " is not key columns in person!"));
+        }
     }
-    db.result('delete from person where pId = $1',req.body.pId)
+    if(whereStr.length == 0)
+        return next(new Error('not found any keys for delete from the person!'));
+    var sqlStr = "DELETE FROM person " + whereStr;
+    if (app.get('env') === 'development') {
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.result(sqlStr, req.body.params)
         .then(function (result) {
             /* jshint ignore:start */
             res.status(200)
                 .json({
-                status: 'success',
-                message: `Removed ${result.rowCount} person`
+                    status: 'success',
+                    message: `Removed ${result.rowCount} from person`
             });
             /* jshint ignore:end */
         })
@@ -955,126 +945,144 @@ function remove_person(req, res, next) {
     });
 }
 
-
 // ---------------------------------------------------------
-//  The function retrieves ALL data from photoData
-//  Be carefully !!
-//  URL : GET /photoData/all
-//  BODY: without BODY !!!
+//  The function makes SQL for the person from the body
+//  URL : POST /person/
+//  BODY: 
+//  {
+//     "cmd": "select" or "insert" or "update or "delete",
+//     "row_count": ... ,
+//     "params": {
+//         "pId":"...",
+//         "cState":...,
+//         "shortName":"...",
+//         "fullName":"...",
+//         "legalName":"...",
+//         "bornDate":"...",
+//         "sexId":"..."
+//      }
+//  }
 // ---------------------------------------------------------
-function getAll_photoData(req, res, next) {
-    db.any('select * from photoData')
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ALL from photoData'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
-}
-
-// ---------------------------------------------------------
-//  The function retrieves data from photoData via primary key
-//  URL : GET /photoData/one/?pId=...
-//  BODY: without BODY !!!
-// ---------------------------------------------------------
-function getSingle_photoData(req, res, next) {
-    var errStr = '';
-    if(!req.query.pId)
-        errStr += 'pId undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+function person_makeQuery(req, res, next) {
+    if( req.body.cmd === undefined )
+        return next( new Error('keyword cmd not found in the body!'));
+    switch(req.body.cmd.toString().toLowerCase()) {
+    case 'select':
+        person_DoSelect(req, res, next);
+        break;
+    case 'insert':
+        person_DoInsert(req, res, next);
+        break;
+    case 'update':
+        person_DoUpdate(req, res, next);
+        break;
+    case 'delete':
+        person_DoDelete(req, res, next);
+        break;
+    default:
+        return next( new Error('cmd ' + req.body.cmd + " is unknow!"));
     }
-    db.one('select * from photoData where pId = $1',req.query.pId)
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ONE photoData'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
 }
 
-// ---------------------------------------------------------
-//  The function retrieves data from photoData using WHERE clause
-//  URL : GET /photoData/any/?cPhoto=...&photo=...
-//  BODY: without BODY !!!
-// ---------------------------------------------------------
-function getWhere_photoData(req, res, next) {
-   var whereStr = '';
-   if(req.query.cPhoto)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " cPhoto = " + req.query.cPhoto.trim();
-   }
-   if(req.query.photo)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " photo LIKE '%" + req.query.photo.trim() + "%'";
-   }
-    if(whereStr.length==0)
-    {
-        next(new Error("No any predicates!"));
-        return;
+
+var photoData_collist_all = ['pid','cphoto','photo'];
+function photoData_HasColname(colname) {
+    return (photoData_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
+}
+
+var photoData_collist_keys = ['pid'];
+function photoData_HasKeyname(keyname) {
+    return (photoData_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
+}
+
+function photoData_makeWhere(req, next) {
+    var whereStr = '';
+    if(req.body.params === undefined)
+        return whereStr;
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(photoData_HasColname(parstr)) {
+            switch(parstr) {
+            case 'pid':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " pid = ${" + parnext + "}";
+                }
+                break;
+            case 'cphoto':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " cphoto = ${" + parnext + "}";
+                }
+                break;
+            case 'photo':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " photo LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
+                }
+                break;
+            }
+        } else {
+            next(new Error('column ' + parnext + " not exists in photodata!"));
+            return "ERROR";
+        }
     }
-    db.one('select * from photoData ' + whereStr)
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ONE photoData'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
+    return whereStr;
 }
 
-// ---------------------------------------------------------
-//  The function retrieves data from photoData using WHERE clause
-//  URL : POST /photoData/query/
-//  BODY: pId=...&cPhoto=...&photo=...
-// ---------------------------------------------------------
-function getPostWhere_photoData(req, res, next) {
-   var whereStr = '';
-   if(req.body.pId)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " pId = " + req.body.pId.trim();
-   }
-   if(req.body.cPhoto)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " cPhoto = " + req.body.cPhoto.trim();
-   }
-   if(req.body.photo)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " photo LIKE '%" + req.body.photo.trim() + "%'";
-   }
-   var sqlStr = 'select * from photoData ' + whereStr;
-
+function photoData_DoSelect(req, res, next) {
+    var whereStr = photoData_makeWhere(req, next);
+    if(whereStr == "ERROR")
+        return;
+    var sqlStr = 'SELECT * FROM photodata ' + whereStr;
     if (app.get('env') === 'development') {
-      console.log( sqlStr );
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
     }
-    db.one(sqlStr)
+    db.any(sqlStr, req.body.params)
         .then(function (data) {
             res.status(200)
                 .json({
                     status: 'success',
                     data: data,
-                    message: 'Retrieved ONE photoData'
+                    message: 'Retrieved from photodata'
+            });
+        })
+        .catch(function (err) {
+            return next(err);
+    });
+}
+
+function photoData_DoInsert(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('insert params not found!'));
+    }
+    var parList = '';
+    var parValues = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(photoData_HasColname(parstr)) {
+            parList = makeList(parList);
+            parList += parstr;
+            parValues = makeList(parValues);
+            parValues += "${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " not exists in photodata!"));
+        }
+    }
+    if(parList.length == 0)
+        return next(new Error('not found any fields for insert into photodata!'));
+    var sqlStr = "INSERT INTO photodata(" + parList + ") VALUES (" + parValues + ")";
+    if (app.get('env') === 'development') {
+       // console.log( sqlStr );
+       console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.none(sqlStr, req.body.params)
+        .then(function () {
+            res.status(200)
+                .json({
+                    status: 'success',
+                    message: 'Inserted into photodata'
                 });
         })
         .catch(function (err) {
@@ -1082,28 +1090,39 @@ function getPostWhere_photoData(req, res, next) {
     });
 }
 
-// ---------------------------------------------------------
-//  The function insert data into photoData
-//  URL : POST /photoData
-//  BODY:pId=...&cPhoto=...&photo=...
-// ---------------------------------------------------------
-function create_photoData(req, res, next) {
-    var errStr = '';
-    if(!req.body.pId)
-        errStr += 'pId undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+function photoData_DoUpdate(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('update params not found!'));
     }
-    db.none('insert into photoData(pId,cPhoto,photo)' +
-            'values(${pId},${cPhoto},${photo})',
-             req.body)
-        .then(function () {
+    var setStr = '';
+    var whereStr = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(photoData_HasKeyname(parstr)) {
+            whereStr = makeWhere(whereStr);
+            whereStr += parstr + "=${" + parnext + "}";
+        } else if(photoData_HasColname(parstr)) {
+            setStr = makeSet(setStr);
+            setStr += parstr + "=${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " not exists in photodata!"));
+        }
+    }
+    if(setStr.length == 0)
+        return next(new Error('not found any fields for update the photodata!'));
+    if(whereStr.length == 0)
+        return next(new Error('not found any keys for update the photodata!'));
+    var sqlStr = "UPDATE photodata " + setStr + " " + whereStr;
+    if (app.get('env') === 'development') {
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.result(sqlStr, req.body.params)
+        .then(function (result) {
             res.status(200)
                 .json({
                     status: 'success',
-                    message: 'Inserted one photoData'
+                    message: `Updated ${result.rowCount} from photodata`
                 });
         })
         .catch(function (err) {
@@ -1111,55 +1130,34 @@ function create_photoData(req, res, next) {
     });
 }
 
-// ---------------------------------------------------------
-//  The function update data in photoData
-//  URL : PUT /photoData
-//  BODY: pId=...&cPhoto=...&photo=...
-// ---------------------------------------------------------
-function update_photoData(req, res, next) {
-    var errStr = '';
-    if(!req.body.pId)
-        errStr += 'pId undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+function photoData_DoDelete(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('delete params not found!'));
     }
-    db.none('update photoData set cPhoto=${cPhoto}, photo=${photo} where pId=${pId}',
-             req.body)
-        .then(function () {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    message: 'Updated photoData'
-                });
-        })
-        .catch(function (err) {
-      return next(err);
-    });
-}
-
-// ---------------------------------------------------------
-//  The function deletes data from photoData
-//  URL : DELETE /photoData/
-//  BODY: pId=...
-// ---------------------------------------------------------
-function remove_photoData(req, res, next) {
-    var errStr = '';
-    if(!req.body.pId)
-        errStr += 'pId undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+    var whereStr = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(photoData_HasKeyname(parstr)) {
+            whereStr = makeWhere(whereStr);
+            whereStr += parstr + "=${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " is not key columns in photodata!"));
+        }
     }
-    db.result('delete from photoData where pId = $1',req.body.pId)
+    if(whereStr.length == 0)
+        return next(new Error('not found any keys for delete from the photodata!'));
+    var sqlStr = "DELETE FROM photodata " + whereStr;
+    if (app.get('env') === 'development') {
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.result(sqlStr, req.body.params)
         .then(function (result) {
             /* jshint ignore:start */
             res.status(200)
                 .json({
-                status: 'success',
-                message: `Removed ${result.rowCount} photoData`
+                    status: 'success',
+                    message: `Removed ${result.rowCount} from photodata`
             });
             /* jshint ignore:end */
         })
@@ -1168,116 +1166,135 @@ function remove_photoData(req, res, next) {
     });
 }
 
-
 // ---------------------------------------------------------
-//  The function retrieves ALL data from photoSpec
-//  Be carefully !!
-//  URL : GET /photoSpec/all
-//  BODY: without BODY !!!
+//  The function makes SQL for the photoData from the body
+//  URL : POST /photoData/
+//  BODY: 
+//  {
+//     "cmd": "select" or "insert" or "update or "delete",
+//     "row_count": ... ,
+//     "params": {
+//         "pId":"...",
+//         "cPhoto":...,
+//         "photo":"..."
+//      }
+//  }
 // ---------------------------------------------------------
-function getAll_photoSpec(req, res, next) {
-    db.any('select * from photoSpec')
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ALL from photoSpec'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
-}
-
-// ---------------------------------------------------------
-//  The function retrieves data from photoSpec via primary key
-//  URL : GET /photoSpec/one/?cPhoto=...
-//  BODY: without BODY !!!
-// ---------------------------------------------------------
-function getSingle_photoSpec(req, res, next) {
-    var errStr = '';
-    if(!req.query.cPhoto)
-        errStr += 'cPhoto undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+function photoData_makeQuery(req, res, next) {
+    if( req.body.cmd === undefined )
+        return next( new Error('keyword cmd not found in the body!'));
+    switch(req.body.cmd.toString().toLowerCase()) {
+    case 'select':
+        photoData_DoSelect(req, res, next);
+        break;
+    case 'insert':
+        photoData_DoInsert(req, res, next);
+        break;
+    case 'update':
+        photoData_DoUpdate(req, res, next);
+        break;
+    case 'delete':
+        photoData_DoDelete(req, res, next);
+        break;
+    default:
+        return next( new Error('cmd ' + req.body.cmd + " is unknow!"));
     }
-    db.one('select * from photoSpec where cPhoto = $1',req.query.cPhoto)
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ONE photoSpec'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
 }
 
-// ---------------------------------------------------------
-//  The function retrieves data from photoSpec using WHERE clause
-//  URL : GET /photoSpec/any/?photoSpec=...
-//  BODY: without BODY !!!
-// ---------------------------------------------------------
-function getWhere_photoSpec(req, res, next) {
-   var whereStr = '';
-   if(req.query.photoSpec)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " photoSpec LIKE '%" + req.query.photoSpec.trim() + "%'";
-   }
-    if(whereStr.length==0)
-    {
-        next(new Error("No any predicates!"));
-        return;
+
+var photoSpec_collist_all = ['cphoto','photospec'];
+function photoSpec_HasColname(colname) {
+    return (photoSpec_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
+}
+
+var photoSpec_collist_keys = ['cphoto'];
+function photoSpec_HasKeyname(keyname) {
+    return (photoSpec_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
+}
+
+function photoSpec_makeWhere(req, next) {
+    var whereStr = '';
+    if(req.body.params === undefined)
+        return whereStr;
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(photoSpec_HasColname(parstr)) {
+            switch(parstr) {
+            case 'cphoto':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " cphoto = ${" + parnext + "}";
+                }
+                break;
+            case 'photospec':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " photospec LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
+                }
+                break;
+            }
+        } else {
+            next(new Error('column ' + parnext + " not exists in photospec!"));
+            return "ERROR";
+        }
     }
-    db.one('select * from photoSpec ' + whereStr)
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ONE photoSpec'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
+    return whereStr;
 }
 
-// ---------------------------------------------------------
-//  The function retrieves data from photoSpec using WHERE clause
-//  URL : POST /photoSpec/query/
-//  BODY: cPhoto=...&photoSpec=...
-// ---------------------------------------------------------
-function getPostWhere_photoSpec(req, res, next) {
-   var whereStr = '';
-   if(req.body.cPhoto)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " cPhoto = " + req.body.cPhoto.trim();
-   }
-   if(req.body.photoSpec)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " photoSpec LIKE '%" + req.body.photoSpec.trim() + "%'";
-   }
-   var sqlStr = 'select * from photoSpec ' + whereStr;
-
+function photoSpec_DoSelect(req, res, next) {
+    var whereStr = photoSpec_makeWhere(req, next);
+    if(whereStr == "ERROR")
+        return;
+    var sqlStr = 'SELECT * FROM photospec ' + whereStr;
     if (app.get('env') === 'development') {
-      console.log( sqlStr );
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
     }
-    db.one(sqlStr)
+    db.any(sqlStr, req.body.params)
         .then(function (data) {
             res.status(200)
                 .json({
                     status: 'success',
                     data: data,
-                    message: 'Retrieved ONE photoSpec'
+                    message: 'Retrieved from photospec'
+            });
+        })
+        .catch(function (err) {
+            return next(err);
+    });
+}
+
+function photoSpec_DoInsert(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('insert params not found!'));
+    }
+    var parList = '';
+    var parValues = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(photoSpec_HasColname(parstr)) {
+            parList = makeList(parList);
+            parList += parstr;
+            parValues = makeList(parValues);
+            parValues += "${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " not exists in photospec!"));
+        }
+    }
+    if(parList.length == 0)
+        return next(new Error('not found any fields for insert into photospec!'));
+    var sqlStr = "INSERT INTO photospec(" + parList + ") VALUES (" + parValues + ") RETURNING cphoto";
+    if (app.get('env') === 'development') {
+       // console.log( sqlStr );
+       console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.one(sqlStr, req.body.params)
+        .then(function (data) {
+            res.status(200)
+                .json({
+                    status: 'success',
+                    data: data,
+                    message: 'Inserted into photospec'
                 });
         })
         .catch(function (err) {
@@ -1285,21 +1302,39 @@ function getPostWhere_photoSpec(req, res, next) {
     });
 }
 
-// ---------------------------------------------------------
-//  The function insert data into photoSpec
-//  URL : POST /photoSpec
-//  BODY:photoSpec=...
-// ---------------------------------------------------------
-function create_photoSpec(req, res, next) {
-    db.one('insert into photoSpec(photoSpec)' +
-            'values(${photoSpec}) returning cPhoto',
-             req.body)
-        .then(function (data) {
+function photoSpec_DoUpdate(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('update params not found!'));
+    }
+    var setStr = '';
+    var whereStr = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(photoSpec_HasKeyname(parstr)) {
+            whereStr = makeWhere(whereStr);
+            whereStr += parstr + "=${" + parnext + "}";
+        } else if(photoSpec_HasColname(parstr)) {
+            setStr = makeSet(setStr);
+            setStr += parstr + "=${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " not exists in photospec!"));
+        }
+    }
+    if(setStr.length == 0)
+        return next(new Error('not found any fields for update the photospec!'));
+    if(whereStr.length == 0)
+        return next(new Error('not found any keys for update the photospec!'));
+    var sqlStr = "UPDATE photospec " + setStr + " " + whereStr;
+    if (app.get('env') === 'development') {
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.result(sqlStr, req.body.params)
+        .then(function (result) {
             res.status(200)
                 .json({
                     status: 'success',
-                    data: data,
-                    message: 'Inserted one photoSpec'
+                    message: `Updated ${result.rowCount} from photospec`
                 });
         })
         .catch(function (err) {
@@ -1307,55 +1342,34 @@ function create_photoSpec(req, res, next) {
     });
 }
 
-// ---------------------------------------------------------
-//  The function update data in photoSpec
-//  URL : PUT /photoSpec
-//  BODY: cPhoto=...&photoSpec=...
-// ---------------------------------------------------------
-function update_photoSpec(req, res, next) {
-    var errStr = '';
-    if(!req.body.cPhoto)
-        errStr += 'cPhoto undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+function photoSpec_DoDelete(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('delete params not found!'));
     }
-    db.none('update photoSpec set photoSpec=${photoSpec} where cPhoto=${cPhoto}',
-             req.body)
-        .then(function () {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    message: 'Updated photoSpec'
-                });
-        })
-        .catch(function (err) {
-      return next(err);
-    });
-}
-
-// ---------------------------------------------------------
-//  The function deletes data from photoSpec
-//  URL : DELETE /photoSpec/
-//  BODY: cPhoto=...
-// ---------------------------------------------------------
-function remove_photoSpec(req, res, next) {
-    var errStr = '';
-    if(!req.body.cPhoto)
-        errStr += 'cPhoto undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+    var whereStr = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(photoSpec_HasKeyname(parstr)) {
+            whereStr = makeWhere(whereStr);
+            whereStr += parstr + "=${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " is not key columns in photospec!"));
+        }
     }
-    db.result('delete from photoSpec where cPhoto = $1',req.body.cPhoto)
+    if(whereStr.length == 0)
+        return next(new Error('not found any keys for delete from the photospec!'));
+    var sqlStr = "DELETE FROM photospec " + whereStr;
+    if (app.get('env') === 'development') {
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.result(sqlStr, req.body.params)
         .then(function (result) {
             /* jshint ignore:start */
             res.status(200)
                 .json({
-                status: 'success',
-                message: `Removed ${result.rowCount} photoSpec`
+                    status: 'success',
+                    message: `Removed ${result.rowCount} from photospec`
             });
             /* jshint ignore:end */
         })
@@ -1364,136 +1378,145 @@ function remove_photoSpec(req, res, next) {
     });
 }
 
-
 // ---------------------------------------------------------
-//  The function retrieves ALL data from audioDatа
-//  Be carefully !!
-//  URL : GET /audioDatа/all
-//  BODY: without BODY !!!
+//  The function makes SQL for the photoSpec from the body
+//  URL : POST /photoSpec/
+//  BODY: 
+//  {
+//     "cmd": "select" or "insert" or "update or "delete",
+//     "row_count": ... ,
+//     "params": {
+//         "cPhoto":...,
+//         "photoSpec":"..."
+//      }
+//  }
 // ---------------------------------------------------------
-function getAll_audioDatа(req, res, next) {
-    db.any('select * from audioDatа')
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ALL from audioDatа'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
-}
-
-// ---------------------------------------------------------
-//  The function retrieves data from audioDatа via primary key
-//  URL : GET /audioDatа/one/?pId=...
-//  BODY: without BODY !!!
-// ---------------------------------------------------------
-function getSingle_audioDatа(req, res, next) {
-    var errStr = '';
-    if(!req.query.pId)
-        errStr += 'pId undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+function photoSpec_makeQuery(req, res, next) {
+    if( req.body.cmd === undefined )
+        return next( new Error('keyword cmd not found in the body!'));
+    switch(req.body.cmd.toString().toLowerCase()) {
+    case 'select':
+        photoSpec_DoSelect(req, res, next);
+        break;
+    case 'insert':
+        photoSpec_DoInsert(req, res, next);
+        break;
+    case 'update':
+        photoSpec_DoUpdate(req, res, next);
+        break;
+    case 'delete':
+        photoSpec_DoDelete(req, res, next);
+        break;
+    default:
+        return next( new Error('cmd ' + req.body.cmd + " is unknow!"));
     }
-    db.one('select * from audioDatа where pId = $1',req.query.pId)
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ONE audioDatа'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
 }
 
-// ---------------------------------------------------------
-//  The function retrieves data from audioDatа using WHERE clause
-//  URL : GET /audioDatа/any/?audioFull=...&audioMemo=...&Memo=...
-//  BODY: without BODY !!!
-// ---------------------------------------------------------
-function getWhere_audioDatа(req, res, next) {
-   var whereStr = '';
-   if(req.query.audioFull)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " audioFull LIKE '%" + req.query.audioFull.trim() + "%'";
-   }
-   if(req.query.audioMemo)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " audioMemo LIKE '%" + req.query.audioMemo.trim() + "%'";
-   }
-   if(req.query.Memo)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " Memo = " + req.query.Memo.trim();
-   }
-    if(whereStr.length==0)
-    {
-        next(new Error("No any predicates!"));
-        return;
+
+var audioDatа_collist_all = ['pid','audiofull','audiomemo','memo'];
+function audioDatа_HasColname(colname) {
+    return (audioDatа_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
+}
+
+var audioDatа_collist_keys = ['pid'];
+function audioDatа_HasKeyname(keyname) {
+    return (audioDatа_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
+}
+
+function audioDatа_makeWhere(req, next) {
+    var whereStr = '';
+    if(req.body.params === undefined)
+        return whereStr;
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(audioDatа_HasColname(parstr)) {
+            switch(parstr) {
+            case 'pid':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " pid = ${" + parnext + "}";
+                }
+                break;
+            case 'audiofull':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " audiofull LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
+                }
+                break;
+            case 'audiomemo':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " audiomemo LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
+                }
+                break;
+            case 'memo':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " memo = ${" + parnext + "}";
+                }
+                break;
+            }
+        } else {
+            next(new Error('column ' + parnext + " not exists in audiodatа!"));
+            return "ERROR";
+        }
     }
-    db.one('select * from audioDatа ' + whereStr)
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ONE audioDatа'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
+    return whereStr;
 }
 
-// ---------------------------------------------------------
-//  The function retrieves data from audioDatа using WHERE clause
-//  URL : POST /audioDatа/query/
-//  BODY: pId=...&audioFull=...&audioMemo=...&Memo=...
-// ---------------------------------------------------------
-function getPostWhere_audioDatа(req, res, next) {
-   var whereStr = '';
-   if(req.body.pId)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " pId = " + req.body.pId.trim();
-   }
-   if(req.body.audioFull)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " audioFull LIKE '%" + req.body.audioFull.trim() + "%'";
-   }
-   if(req.body.audioMemo)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " audioMemo LIKE '%" + req.body.audioMemo.trim() + "%'";
-   }
-   if(req.body.Memo)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " Memo = " + req.body.Memo.trim();
-   }
-   var sqlStr = 'select * from audioDatа ' + whereStr;
-
+function audioDatа_DoSelect(req, res, next) {
+    var whereStr = audioDatа_makeWhere(req, next);
+    if(whereStr == "ERROR")
+        return;
+    var sqlStr = 'SELECT * FROM audiodatа ' + whereStr;
     if (app.get('env') === 'development') {
-      console.log( sqlStr );
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
     }
-    db.one(sqlStr)
+    db.any(sqlStr, req.body.params)
         .then(function (data) {
             res.status(200)
                 .json({
                     status: 'success',
                     data: data,
-                    message: 'Retrieved ONE audioDatа'
+                    message: 'Retrieved from audiodatа'
+            });
+        })
+        .catch(function (err) {
+            return next(err);
+    });
+}
+
+function audioDatа_DoInsert(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('insert params not found!'));
+    }
+    var parList = '';
+    var parValues = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(audioDatа_HasColname(parstr)) {
+            parList = makeList(parList);
+            parList += parstr;
+            parValues = makeList(parValues);
+            parValues += "${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " not exists in audiodatа!"));
+        }
+    }
+    if(parList.length == 0)
+        return next(new Error('not found any fields for insert into audiodatа!'));
+    var sqlStr = "INSERT INTO audiodatа(" + parList + ") VALUES (" + parValues + ")";
+    if (app.get('env') === 'development') {
+       // console.log( sqlStr );
+       console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.none(sqlStr, req.body.params)
+        .then(function () {
+            res.status(200)
+                .json({
+                    status: 'success',
+                    message: 'Inserted into audiodatа'
                 });
         })
         .catch(function (err) {
@@ -1501,28 +1524,39 @@ function getPostWhere_audioDatа(req, res, next) {
     });
 }
 
-// ---------------------------------------------------------
-//  The function insert data into audioDatа
-//  URL : POST /audioDatа
-//  BODY:pId=...&audioFull=...&audioMemo=...&Memo=...
-// ---------------------------------------------------------
-function create_audioDatа(req, res, next) {
-    var errStr = '';
-    if(!req.body.pId)
-        errStr += 'pId undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+function audioDatа_DoUpdate(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('update params not found!'));
     }
-    db.none('insert into audioDatа(pId,audioFull,audioMemo,Memo)' +
-            'values(${pId},${audioFull},${audioMemo},${Memo})',
-             req.body)
-        .then(function () {
+    var setStr = '';
+    var whereStr = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(audioDatа_HasKeyname(parstr)) {
+            whereStr = makeWhere(whereStr);
+            whereStr += parstr + "=${" + parnext + "}";
+        } else if(audioDatа_HasColname(parstr)) {
+            setStr = makeSet(setStr);
+            setStr += parstr + "=${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " not exists in audiodatа!"));
+        }
+    }
+    if(setStr.length == 0)
+        return next(new Error('not found any fields for update the audiodatа!'));
+    if(whereStr.length == 0)
+        return next(new Error('not found any keys for update the audiodatа!'));
+    var sqlStr = "UPDATE audiodatа " + setStr + " " + whereStr;
+    if (app.get('env') === 'development') {
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.result(sqlStr, req.body.params)
+        .then(function (result) {
             res.status(200)
                 .json({
                     status: 'success',
-                    message: 'Inserted one audioDatа'
+                    message: `Updated ${result.rowCount} from audiodatа`
                 });
         })
         .catch(function (err) {
@@ -1530,55 +1564,34 @@ function create_audioDatа(req, res, next) {
     });
 }
 
-// ---------------------------------------------------------
-//  The function update data in audioDatа
-//  URL : PUT /audioDatа
-//  BODY: pId=...&audioFull=...&audioMemo=...&Memo=...
-// ---------------------------------------------------------
-function update_audioDatа(req, res, next) {
-    var errStr = '';
-    if(!req.body.pId)
-        errStr += 'pId undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+function audioDatа_DoDelete(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('delete params not found!'));
     }
-    db.none('update audioDatа set audioFull=${audioFull}, audioMemo=${audioMemo}, Memo=${Memo} where pId=${pId}',
-             req.body)
-        .then(function () {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    message: 'Updated audioDatа'
-                });
-        })
-        .catch(function (err) {
-      return next(err);
-    });
-}
-
-// ---------------------------------------------------------
-//  The function deletes data from audioDatа
-//  URL : DELETE /audioDatа/
-//  BODY: pId=...
-// ---------------------------------------------------------
-function remove_audioDatа(req, res, next) {
-    var errStr = '';
-    if(!req.body.pId)
-        errStr += 'pId undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+    var whereStr = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(audioDatа_HasKeyname(parstr)) {
+            whereStr = makeWhere(whereStr);
+            whereStr += parstr + "=${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " is not key columns in audiodatа!"));
+        }
     }
-    db.result('delete from audioDatа where pId = $1',req.body.pId)
+    if(whereStr.length == 0)
+        return next(new Error('not found any keys for delete from the audiodatа!'));
+    var sqlStr = "DELETE FROM audiodatа " + whereStr;
+    if (app.get('env') === 'development') {
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.result(sqlStr, req.body.params)
         .then(function (result) {
             /* jshint ignore:start */
             res.status(200)
                 .json({
-                status: 'success',
-                message: `Removed ${result.rowCount} audioDatа`
+                    status: 'success',
+                    message: `Removed ${result.rowCount} from audiodatа`
             });
             /* jshint ignore:end */
         })
@@ -1587,176 +1600,172 @@ function remove_audioDatа(req, res, next) {
     });
 }
 
-
 // ---------------------------------------------------------
-//  The function retrieves ALL data from operator
-//  Be carefully !!
-//  URL : GET /operator/all
-//  BODY: without BODY !!!
+//  The function makes SQL for the audioDatа from the body
+//  URL : POST /audioDatа/
+//  BODY: 
+//  {
+//     "cmd": "select" or "insert" or "update or "delete",
+//     "row_count": ... ,
+//     "params": {
+//         "pId":"...",
+//         "audioFull":"...",
+//         "audioMemo":"...",
+//         "Memo":"..."
+//      }
+//  }
 // ---------------------------------------------------------
-function getAll_operator(req, res, next) {
-    db.any('select * from operator')
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ALL from operator'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
-}
-
-// ---------------------------------------------------------
-//  The function retrieves data from operator via primary key
-//  URL : GET /operator/one/?cOper=...
-//  BODY: without BODY !!!
-// ---------------------------------------------------------
-function getSingle_operator(req, res, next) {
-    var errStr = '';
-    if(!req.query.cOper)
-        errStr += 'cOper undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+function audioDatа_makeQuery(req, res, next) {
+    if( req.body.cmd === undefined )
+        return next( new Error('keyword cmd not found in the body!'));
+    switch(req.body.cmd.toString().toLowerCase()) {
+    case 'select':
+        audioDatа_DoSelect(req, res, next);
+        break;
+    case 'insert':
+        audioDatа_DoInsert(req, res, next);
+        break;
+    case 'update':
+        audioDatа_DoUpdate(req, res, next);
+        break;
+    case 'delete':
+        audioDatа_DoDelete(req, res, next);
+        break;
+    default:
+        return next( new Error('cmd ' + req.body.cmd + " is unknow!"));
     }
-    db.one('select * from operator where cOper = $1',req.query.cOper)
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ONE operator'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
 }
 
-// ---------------------------------------------------------
-//  The function retrieves data from operator using WHERE clause
-//  URL : GET /operator/any/?cRule=...&cPoint=...&Stuff=...&Stuff_en=...&key=...&phrase=...&stateId=...
-//  BODY: without BODY !!!
-// ---------------------------------------------------------
-function getWhere_operator(req, res, next) {
-   var whereStr = '';
-   if(req.query.cRule)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " cRule = " + req.query.cRule.trim();
-   }
-   if(req.query.cPoint)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " cPoint = " + req.query.cPoint.trim();
-   }
-   if(req.query.Stuff)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " Stuff LIKE '%" + req.query.Stuff.trim() + "%'";
-   }
-   if(req.query.Stuff_en)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " Stuff_en LIKE '%" + req.query.Stuff_en.trim() + "%'";
-   }
-   if(req.query.key)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " key LIKE '%" + req.query.key.trim() + "%'";
-   }
-   if(req.query.phrase)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " phrase LIKE '%" + req.query.phrase.trim() + "%'";
-   }
-   if(req.query.stateId)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " stateId = " + req.query.stateId.trim();
-   }
-    if(whereStr.length==0)
-    {
-        next(new Error("No any predicates!"));
-        return;
+
+var operator_collist_all = ['coper','crule','cpoint','stuff','stuff_en','key','phrase','stateid'];
+function operator_HasColname(colname) {
+    return (operator_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
+}
+
+var operator_collist_keys = ['coper'];
+function operator_HasKeyname(keyname) {
+    return (operator_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
+}
+
+function operator_makeWhere(req, next) {
+    var whereStr = '';
+    if(req.body.params === undefined)
+        return whereStr;
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(operator_HasColname(parstr)) {
+            switch(parstr) {
+            case 'coper':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " coper = ${" + parnext + "}";
+                }
+                break;
+            case 'crule':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " crule = ${" + parnext + "}";
+                }
+                break;
+            case 'cpoint':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " cpoint = ${" + parnext + "}";
+                }
+                break;
+            case 'stuff':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " stuff LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
+                }
+                break;
+            case 'stuff_en':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " stuff_en LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
+                }
+                break;
+            case 'key':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " key LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
+                }
+                break;
+            case 'phrase':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " phrase LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
+                }
+                break;
+            case 'stateid':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " stateid = ${" + parnext + "}";
+                }
+                break;
+            }
+        } else {
+            next(new Error('column ' + parnext + " not exists in operator!"));
+            return "ERROR";
+        }
     }
-    db.one('select * from operator ' + whereStr)
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ONE operator'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
+    return whereStr;
 }
 
-// ---------------------------------------------------------
-//  The function retrieves data from operator using WHERE clause
-//  URL : POST /operator/query/
-//  BODY: cOper=...&cRule=...&cPoint=...&Stuff=...&Stuff_en=...&key=...&phrase=...&stateId=...
-// ---------------------------------------------------------
-function getPostWhere_operator(req, res, next) {
-   var whereStr = '';
-   if(req.body.cOper)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " cOper = " + req.body.cOper.trim();
-   }
-   if(req.body.cRule)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " cRule = " + req.body.cRule.trim();
-   }
-   if(req.body.cPoint)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " cPoint = " + req.body.cPoint.trim();
-   }
-   if(req.body.Stuff)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " Stuff LIKE '%" + req.body.Stuff.trim() + "%'";
-   }
-   if(req.body.Stuff_en)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " Stuff_en LIKE '%" + req.body.Stuff_en.trim() + "%'";
-   }
-   if(req.body.key)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " key LIKE '%" + req.body.key.trim() + "%'";
-   }
-   if(req.body.phrase)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " phrase LIKE '%" + req.body.phrase.trim() + "%'";
-   }
-   if(req.body.stateId)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " stateId = " + req.body.stateId.trim();
-   }
-   var sqlStr = 'select * from operator ' + whereStr;
-
+function operator_DoSelect(req, res, next) {
+    var whereStr = operator_makeWhere(req, next);
+    if(whereStr == "ERROR")
+        return;
+    var sqlStr = 'SELECT * FROM operator ' + whereStr;
     if (app.get('env') === 'development') {
-      console.log( sqlStr );
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
     }
-    db.one(sqlStr)
+    db.any(sqlStr, req.body.params)
         .then(function (data) {
             res.status(200)
                 .json({
                     status: 'success',
                     data: data,
-                    message: 'Retrieved ONE operator'
+                    message: 'Retrieved from operator'
+            });
+        })
+        .catch(function (err) {
+            return next(err);
+    });
+}
+
+function operator_DoInsert(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('insert params not found!'));
+    }
+    var parList = '';
+    var parValues = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(operator_HasColname(parstr)) {
+            parList = makeList(parList);
+            parList += parstr;
+            parValues = makeList(parValues);
+            parValues += "${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " not exists in operator!"));
+        }
+    }
+    if(parList.length == 0)
+        return next(new Error('not found any fields for insert into operator!'));
+    var sqlStr = "INSERT INTO operator(" + parList + ") VALUES (" + parValues + ") RETURNING coper";
+    if (app.get('env') === 'development') {
+       // console.log( sqlStr );
+       console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.one(sqlStr, req.body.params)
+        .then(function (data) {
+            res.status(200)
+                .json({
+                    status: 'success',
+                    data: data,
+                    message: 'Inserted into operator'
                 });
         })
         .catch(function (err) {
@@ -1764,21 +1773,39 @@ function getPostWhere_operator(req, res, next) {
     });
 }
 
-// ---------------------------------------------------------
-//  The function insert data into operator
-//  URL : POST /operator
-//  BODY:cRule=...&cPoint=...&Stuff=...&Stuff_en=...&key=...&phrase=...&stateId=...
-// ---------------------------------------------------------
-function create_operator(req, res, next) {
-    db.one('insert into operator(cRule,cPoint,Stuff,Stuff_en,key,phrase,stateId)' +
-            'values(${cRule},${cPoint},${Stuff},${Stuff_en},${key},${phrase},${stateId}) returning cOper',
-             req.body)
-        .then(function (data) {
+function operator_DoUpdate(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('update params not found!'));
+    }
+    var setStr = '';
+    var whereStr = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(operator_HasKeyname(parstr)) {
+            whereStr = makeWhere(whereStr);
+            whereStr += parstr + "=${" + parnext + "}";
+        } else if(operator_HasColname(parstr)) {
+            setStr = makeSet(setStr);
+            setStr += parstr + "=${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " not exists in operator!"));
+        }
+    }
+    if(setStr.length == 0)
+        return next(new Error('not found any fields for update the operator!'));
+    if(whereStr.length == 0)
+        return next(new Error('not found any keys for update the operator!'));
+    var sqlStr = "UPDATE operator " + setStr + " " + whereStr;
+    if (app.get('env') === 'development') {
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.result(sqlStr, req.body.params)
+        .then(function (result) {
             res.status(200)
                 .json({
                     status: 'success',
-                    data: data,
-                    message: 'Inserted one operator'
+                    message: `Updated ${result.rowCount} from operator`
                 });
         })
         .catch(function (err) {
@@ -1786,55 +1813,34 @@ function create_operator(req, res, next) {
     });
 }
 
-// ---------------------------------------------------------
-//  The function update data in operator
-//  URL : PUT /operator
-//  BODY: cOper=...&cRule=...&cPoint=...&Stuff=...&Stuff_en=...&key=...&phrase=...&stateId=...
-// ---------------------------------------------------------
-function update_operator(req, res, next) {
-    var errStr = '';
-    if(!req.body.cOper)
-        errStr += 'cOper undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+function operator_DoDelete(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('delete params not found!'));
     }
-    db.none('update operator set cRule=${cRule}, cPoint=${cPoint}, Stuff=${Stuff}, Stuff_en=${Stuff_en}, key=${key}, phrase=${phrase}, stateId=${stateId} where cOper=${cOper}',
-             req.body)
-        .then(function () {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    message: 'Updated operator'
-                });
-        })
-        .catch(function (err) {
-      return next(err);
-    });
-}
-
-// ---------------------------------------------------------
-//  The function deletes data from operator
-//  URL : DELETE /operator/
-//  BODY: cOper=...
-// ---------------------------------------------------------
-function remove_operator(req, res, next) {
-    var errStr = '';
-    if(!req.body.cOper)
-        errStr += 'cOper undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+    var whereStr = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(operator_HasKeyname(parstr)) {
+            whereStr = makeWhere(whereStr);
+            whereStr += parstr + "=${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " is not key columns in operator!"));
+        }
     }
-    db.result('delete from operator where cOper = $1',req.body.cOper)
+    if(whereStr.length == 0)
+        return next(new Error('not found any keys for delete from the operator!'));
+    var sqlStr = "DELETE FROM operator " + whereStr;
+    if (app.get('env') === 'development') {
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.result(sqlStr, req.body.params)
         .then(function (result) {
             /* jshint ignore:start */
             res.status(200)
                 .json({
-                status: 'success',
-                message: `Removed ${result.rowCount} operator`
+                    status: 'success',
+                    message: `Removed ${result.rowCount} from operator`
             });
             /* jshint ignore:end */
         })
@@ -1843,156 +1849,164 @@ function remove_operator(req, res, next) {
     });
 }
 
-
 // ---------------------------------------------------------
-//  The function retrieves ALL data from regPoint
-//  Be carefully !!
-//  URL : GET /regPoint/all
-//  BODY: without BODY !!!
+//  The function makes SQL for the operator from the body
+//  URL : POST /operator/
+//  BODY: 
+//  {
+//     "cmd": "select" or "insert" or "update or "delete",
+//     "row_count": ... ,
+//     "params": {
+//         "cOper":...,
+//         "cRule":...,
+//         "cPoint":...,
+//         "Stuff":"...",
+//         "Stuff_en":"...",
+//         "key":"...",
+//         "phrase":"...",
+//         "stateId":"..."
+//      }
+//  }
 // ---------------------------------------------------------
-function getAll_regPoint(req, res, next) {
-    db.any('select * from regPoint')
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ALL from regPoint'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
-}
-
-// ---------------------------------------------------------
-//  The function retrieves data from regPoint via primary key
-//  URL : GET /regPoint/one/?cPoint=...
-//  BODY: without BODY !!!
-// ---------------------------------------------------------
-function getSingle_regPoint(req, res, next) {
-    var errStr = '';
-    if(!req.query.cPoint)
-        errStr += 'cPoint undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+function operator_makeQuery(req, res, next) {
+    if( req.body.cmd === undefined )
+        return next( new Error('keyword cmd not found in the body!'));
+    switch(req.body.cmd.toString().toLowerCase()) {
+    case 'select':
+        operator_DoSelect(req, res, next);
+        break;
+    case 'insert':
+        operator_DoInsert(req, res, next);
+        break;
+    case 'update':
+        operator_DoUpdate(req, res, next);
+        break;
+    case 'delete':
+        operator_DoDelete(req, res, next);
+        break;
+    default:
+        return next( new Error('cmd ' + req.body.cmd + " is unknow!"));
     }
-    db.one('select * from regPoint where cPoint = $1',req.query.cPoint)
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ONE regPoint'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
 }
 
-// ---------------------------------------------------------
-//  The function retrieves data from regPoint using WHERE clause
-//  URL : GET /regPoint/any/?cState=...&point=...&point_en=...&location=...&location_en=...
-//  BODY: without BODY !!!
-// ---------------------------------------------------------
-function getWhere_regPoint(req, res, next) {
-   var whereStr = '';
-   if(req.query.cState)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " cState = " + req.query.cState.trim();
-   }
-   if(req.query.point)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " point LIKE '%" + req.query.point.trim() + "%'";
-   }
-   if(req.query.point_en)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " point_en LIKE '%" + req.query.point_en.trim() + "%'";
-   }
-   if(req.query.location)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " location LIKE '%" + req.query.location.trim() + "%'";
-   }
-   if(req.query.location_en)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " location_en LIKE '%" + req.query.location_en.trim() + "%'";
-   }
-    if(whereStr.length==0)
-    {
-        next(new Error("No any predicates!"));
-        return;
+
+var regPoint_collist_all = ['cpoint','cstate','point','point_en','location','location_en'];
+function regPoint_HasColname(colname) {
+    return (regPoint_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
+}
+
+var regPoint_collist_keys = ['cpoint'];
+function regPoint_HasKeyname(keyname) {
+    return (regPoint_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
+}
+
+function regPoint_makeWhere(req, next) {
+    var whereStr = '';
+    if(req.body.params === undefined)
+        return whereStr;
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(regPoint_HasColname(parstr)) {
+            switch(parstr) {
+            case 'cpoint':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " cpoint = ${" + parnext + "}";
+                }
+                break;
+            case 'cstate':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " cstate = ${" + parnext + "}";
+                }
+                break;
+            case 'point':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " point LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
+                }
+                break;
+            case 'point_en':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " point_en LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
+                }
+                break;
+            case 'location':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " location LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
+                }
+                break;
+            case 'location_en':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " location_en LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
+                }
+                break;
+            }
+        } else {
+            next(new Error('column ' + parnext + " not exists in regpoint!"));
+            return "ERROR";
+        }
     }
-    db.one('select * from regPoint ' + whereStr)
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ONE regPoint'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
+    return whereStr;
 }
 
-// ---------------------------------------------------------
-//  The function retrieves data from regPoint using WHERE clause
-//  URL : POST /regPoint/query/
-//  BODY: cPoint=...&cState=...&point=...&point_en=...&location=...&location_en=...
-// ---------------------------------------------------------
-function getPostWhere_regPoint(req, res, next) {
-   var whereStr = '';
-   if(req.body.cPoint)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " cPoint = " + req.body.cPoint.trim();
-   }
-   if(req.body.cState)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " cState = " + req.body.cState.trim();
-   }
-   if(req.body.point)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " point LIKE '%" + req.body.point.trim() + "%'";
-   }
-   if(req.body.point_en)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " point_en LIKE '%" + req.body.point_en.trim() + "%'";
-   }
-   if(req.body.location)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " location LIKE '%" + req.body.location.trim() + "%'";
-   }
-   if(req.body.location_en)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " location_en LIKE '%" + req.body.location_en.trim() + "%'";
-   }
-   var sqlStr = 'select * from regPoint ' + whereStr;
-
+function regPoint_DoSelect(req, res, next) {
+    var whereStr = regPoint_makeWhere(req, next);
+    if(whereStr == "ERROR")
+        return;
+    var sqlStr = 'SELECT * FROM regpoint ' + whereStr;
     if (app.get('env') === 'development') {
-      console.log( sqlStr );
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
     }
-    db.one(sqlStr)
+    db.any(sqlStr, req.body.params)
         .then(function (data) {
             res.status(200)
                 .json({
                     status: 'success',
                     data: data,
-                    message: 'Retrieved ONE regPoint'
+                    message: 'Retrieved from regpoint'
+            });
+        })
+        .catch(function (err) {
+            return next(err);
+    });
+}
+
+function regPoint_DoInsert(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('insert params not found!'));
+    }
+    var parList = '';
+    var parValues = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(regPoint_HasColname(parstr)) {
+            parList = makeList(parList);
+            parList += parstr;
+            parValues = makeList(parValues);
+            parValues += "${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " not exists in regpoint!"));
+        }
+    }
+    if(parList.length == 0)
+        return next(new Error('not found any fields for insert into regpoint!'));
+    var sqlStr = "INSERT INTO regpoint(" + parList + ") VALUES (" + parValues + ") RETURNING cpoint";
+    if (app.get('env') === 'development') {
+       // console.log( sqlStr );
+       console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.one(sqlStr, req.body.params)
+        .then(function (data) {
+            res.status(200)
+                .json({
+                    status: 'success',
+                    data: data,
+                    message: 'Inserted into regpoint'
                 });
         })
         .catch(function (err) {
@@ -2000,21 +2014,39 @@ function getPostWhere_regPoint(req, res, next) {
     });
 }
 
-// ---------------------------------------------------------
-//  The function insert data into regPoint
-//  URL : POST /regPoint
-//  BODY:cState=...&point=...&point_en=...&location=...&location_en=...
-// ---------------------------------------------------------
-function create_regPoint(req, res, next) {
-    db.one('insert into regPoint(cState,point,point_en,location,location_en)' +
-            'values(${cState},${point},${point_en},${location},${location_en}) returning cPoint',
-             req.body)
-        .then(function (data) {
+function regPoint_DoUpdate(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('update params not found!'));
+    }
+    var setStr = '';
+    var whereStr = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(regPoint_HasKeyname(parstr)) {
+            whereStr = makeWhere(whereStr);
+            whereStr += parstr + "=${" + parnext + "}";
+        } else if(regPoint_HasColname(parstr)) {
+            setStr = makeSet(setStr);
+            setStr += parstr + "=${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " not exists in regpoint!"));
+        }
+    }
+    if(setStr.length == 0)
+        return next(new Error('not found any fields for update the regpoint!'));
+    if(whereStr.length == 0)
+        return next(new Error('not found any keys for update the regpoint!'));
+    var sqlStr = "UPDATE regpoint " + setStr + " " + whereStr;
+    if (app.get('env') === 'development') {
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.result(sqlStr, req.body.params)
+        .then(function (result) {
             res.status(200)
                 .json({
                     status: 'success',
-                    data: data,
-                    message: 'Inserted one regPoint'
+                    message: `Updated ${result.rowCount} from regpoint`
                 });
         })
         .catch(function (err) {
@@ -2022,55 +2054,34 @@ function create_regPoint(req, res, next) {
     });
 }
 
-// ---------------------------------------------------------
-//  The function update data in regPoint
-//  URL : PUT /regPoint
-//  BODY: cPoint=...&cState=...&point=...&point_en=...&location=...&location_en=...
-// ---------------------------------------------------------
-function update_regPoint(req, res, next) {
-    var errStr = '';
-    if(!req.body.cPoint)
-        errStr += 'cPoint undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+function regPoint_DoDelete(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('delete params not found!'));
     }
-    db.none('update regPoint set cState=${cState}, point=${point}, point_en=${point_en}, location=${location}, location_en=${location_en} where cPoint=${cPoint}',
-             req.body)
-        .then(function () {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    message: 'Updated regPoint'
-                });
-        })
-        .catch(function (err) {
-      return next(err);
-    });
-}
-
-// ---------------------------------------------------------
-//  The function deletes data from regPoint
-//  URL : DELETE /regPoint/
-//  BODY: cPoint=...
-// ---------------------------------------------------------
-function remove_regPoint(req, res, next) {
-    var errStr = '';
-    if(!req.body.cPoint)
-        errStr += 'cPoint undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+    var whereStr = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(regPoint_HasKeyname(parstr)) {
+            whereStr = makeWhere(whereStr);
+            whereStr += parstr + "=${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " is not key columns in regpoint!"));
+        }
     }
-    db.result('delete from regPoint where cPoint = $1',req.body.cPoint)
+    if(whereStr.length == 0)
+        return next(new Error('not found any keys for delete from the regpoint!'));
+    var sqlStr = "DELETE FROM regpoint " + whereStr;
+    if (app.get('env') === 'development') {
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.result(sqlStr, req.body.params)
         .then(function (result) {
             /* jshint ignore:start */
             res.status(200)
                 .json({
-                status: 'success',
-                message: `Removed ${result.rowCount} regPoint`
+                    status: 'success',
+                    message: `Removed ${result.rowCount} from regpoint`
             });
             /* jshint ignore:end */
         })
@@ -2079,126 +2090,144 @@ function remove_regPoint(req, res, next) {
     });
 }
 
-
 // ---------------------------------------------------------
-//  The function retrieves ALL data from opRule
-//  Be carefully !!
-//  URL : GET /opRule/all
-//  BODY: without BODY !!!
+//  The function makes SQL for the regPoint from the body
+//  URL : POST /regPoint/
+//  BODY: 
+//  {
+//     "cmd": "select" or "insert" or "update or "delete",
+//     "row_count": ... ,
+//     "params": {
+//         "cPoint":...,
+//         "cState":...,
+//         "point":"...",
+//         "point_en":"...",
+//         "location":"...",
+//         "location_en":"..."
+//      }
+//  }
 // ---------------------------------------------------------
-function getAll_opRule(req, res, next) {
-    db.any('select * from opRule')
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ALL from opRule'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
-}
-
-// ---------------------------------------------------------
-//  The function retrieves data from opRule via primary key
-//  URL : GET /opRule/one/?cRule=...
-//  BODY: without BODY !!!
-// ---------------------------------------------------------
-function getSingle_opRule(req, res, next) {
-    var errStr = '';
-    if(!req.query.cRule)
-        errStr += 'cRule undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+function regPoint_makeQuery(req, res, next) {
+    if( req.body.cmd === undefined )
+        return next( new Error('keyword cmd not found in the body!'));
+    switch(req.body.cmd.toString().toLowerCase()) {
+    case 'select':
+        regPoint_DoSelect(req, res, next);
+        break;
+    case 'insert':
+        regPoint_DoInsert(req, res, next);
+        break;
+    case 'update':
+        regPoint_DoUpdate(req, res, next);
+        break;
+    case 'delete':
+        regPoint_DoDelete(req, res, next);
+        break;
+    default:
+        return next( new Error('cmd ' + req.body.cmd + " is unknow!"));
     }
-    db.one('select * from opRule where cRule = $1',req.query.cRule)
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ONE opRule'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
 }
 
-// ---------------------------------------------------------
-//  The function retrieves data from opRule using WHERE clause
-//  URL : GET /opRule/any/?Rule=...&Rule_en=...
-//  BODY: without BODY !!!
-// ---------------------------------------------------------
-function getWhere_opRule(req, res, next) {
-   var whereStr = '';
-   if(req.query.Rule)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " Rule LIKE '%" + req.query.Rule.trim() + "%'";
-   }
-   if(req.query.Rule_en)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " Rule_en LIKE '%" + req.query.Rule_en.trim() + "%'";
-   }
-    if(whereStr.length==0)
-    {
-        next(new Error("No any predicates!"));
-        return;
+
+var opRule_collist_all = ['crule','rule','rule_en'];
+function opRule_HasColname(colname) {
+    return (opRule_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
+}
+
+var opRule_collist_keys = ['crule'];
+function opRule_HasKeyname(keyname) {
+    return (opRule_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
+}
+
+function opRule_makeWhere(req, next) {
+    var whereStr = '';
+    if(req.body.params === undefined)
+        return whereStr;
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(opRule_HasColname(parstr)) {
+            switch(parstr) {
+            case 'crule':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " crule = ${" + parnext + "}";
+                }
+                break;
+            case 'rule':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " rule LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
+                }
+                break;
+            case 'rule_en':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " rule_en LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
+                }
+                break;
+            }
+        } else {
+            next(new Error('column ' + parnext + " not exists in oprule!"));
+            return "ERROR";
+        }
     }
-    db.one('select * from opRule ' + whereStr)
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ONE opRule'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
+    return whereStr;
 }
 
-// ---------------------------------------------------------
-//  The function retrieves data from opRule using WHERE clause
-//  URL : POST /opRule/query/
-//  BODY: cRule=...&Rule=...&Rule_en=...
-// ---------------------------------------------------------
-function getPostWhere_opRule(req, res, next) {
-   var whereStr = '';
-   if(req.body.cRule)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " cRule = " + req.body.cRule.trim();
-   }
-   if(req.body.Rule)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " Rule LIKE '%" + req.body.Rule.trim() + "%'";
-   }
-   if(req.body.Rule_en)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " Rule_en LIKE '%" + req.body.Rule_en.trim() + "%'";
-   }
-   var sqlStr = 'select * from opRule ' + whereStr;
-
+function opRule_DoSelect(req, res, next) {
+    var whereStr = opRule_makeWhere(req, next);
+    if(whereStr == "ERROR")
+        return;
+    var sqlStr = 'SELECT * FROM oprule ' + whereStr;
     if (app.get('env') === 'development') {
-      console.log( sqlStr );
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
     }
-    db.one(sqlStr)
+    db.any(sqlStr, req.body.params)
         .then(function (data) {
             res.status(200)
                 .json({
                     status: 'success',
                     data: data,
-                    message: 'Retrieved ONE opRule'
+                    message: 'Retrieved from oprule'
+            });
+        })
+        .catch(function (err) {
+            return next(err);
+    });
+}
+
+function opRule_DoInsert(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('insert params not found!'));
+    }
+    var parList = '';
+    var parValues = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(opRule_HasColname(parstr)) {
+            parList = makeList(parList);
+            parList += parstr;
+            parValues = makeList(parValues);
+            parValues += "${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " not exists in oprule!"));
+        }
+    }
+    if(parList.length == 0)
+        return next(new Error('not found any fields for insert into oprule!'));
+    var sqlStr = "INSERT INTO oprule(" + parList + ") VALUES (" + parValues + ") RETURNING crule";
+    if (app.get('env') === 'development') {
+       // console.log( sqlStr );
+       console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.one(sqlStr, req.body.params)
+        .then(function (data) {
+            res.status(200)
+                .json({
+                    status: 'success',
+                    data: data,
+                    message: 'Inserted into oprule'
                 });
         })
         .catch(function (err) {
@@ -2206,21 +2235,39 @@ function getPostWhere_opRule(req, res, next) {
     });
 }
 
-// ---------------------------------------------------------
-//  The function insert data into opRule
-//  URL : POST /opRule
-//  BODY:Rule=...&Rule_en=...
-// ---------------------------------------------------------
-function create_opRule(req, res, next) {
-    db.one('insert into opRule(Rule,Rule_en)' +
-            'values(${Rule},${Rule_en}) returning cRule',
-             req.body)
-        .then(function (data) {
+function opRule_DoUpdate(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('update params not found!'));
+    }
+    var setStr = '';
+    var whereStr = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(opRule_HasKeyname(parstr)) {
+            whereStr = makeWhere(whereStr);
+            whereStr += parstr + "=${" + parnext + "}";
+        } else if(opRule_HasColname(parstr)) {
+            setStr = makeSet(setStr);
+            setStr += parstr + "=${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " not exists in oprule!"));
+        }
+    }
+    if(setStr.length == 0)
+        return next(new Error('not found any fields for update the oprule!'));
+    if(whereStr.length == 0)
+        return next(new Error('not found any keys for update the oprule!'));
+    var sqlStr = "UPDATE oprule " + setStr + " " + whereStr;
+    if (app.get('env') === 'development') {
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.result(sqlStr, req.body.params)
+        .then(function (result) {
             res.status(200)
                 .json({
                     status: 'success',
-                    data: data,
-                    message: 'Inserted one opRule'
+                    message: `Updated ${result.rowCount} from oprule`
                 });
         })
         .catch(function (err) {
@@ -2228,55 +2275,34 @@ function create_opRule(req, res, next) {
     });
 }
 
-// ---------------------------------------------------------
-//  The function update data in opRule
-//  URL : PUT /opRule
-//  BODY: cRule=...&Rule=...&Rule_en=...
-// ---------------------------------------------------------
-function update_opRule(req, res, next) {
-    var errStr = '';
-    if(!req.body.cRule)
-        errStr += 'cRule undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+function opRule_DoDelete(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('delete params not found!'));
     }
-    db.none('update opRule set Rule=${Rule}, Rule_en=${Rule_en} where cRule=${cRule}',
-             req.body)
-        .then(function () {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    message: 'Updated opRule'
-                });
-        })
-        .catch(function (err) {
-      return next(err);
-    });
-}
-
-// ---------------------------------------------------------
-//  The function deletes data from opRule
-//  URL : DELETE /opRule/
-//  BODY: cRule=...
-// ---------------------------------------------------------
-function remove_opRule(req, res, next) {
-    var errStr = '';
-    if(!req.body.cRule)
-        errStr += 'cRule undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+    var whereStr = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(opRule_HasKeyname(parstr)) {
+            whereStr = makeWhere(whereStr);
+            whereStr += parstr + "=${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " is not key columns in oprule!"));
+        }
     }
-    db.result('delete from opRule where cRule = $1',req.body.cRule)
+    if(whereStr.length == 0)
+        return next(new Error('not found any keys for delete from the oprule!'));
+    var sqlStr = "DELETE FROM oprule " + whereStr;
+    if (app.get('env') === 'development') {
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.result(sqlStr, req.body.params)
         .then(function (result) {
             /* jshint ignore:start */
             res.status(200)
                 .json({
-                status: 'success',
-                message: `Removed ${result.rowCount} opRule`
+                    status: 'success',
+                    message: `Removed ${result.rowCount} from oprule`
             });
             /* jshint ignore:end */
         })
@@ -2285,166 +2311,165 @@ function remove_opRule(req, res, next) {
     });
 }
 
-
 // ---------------------------------------------------------
-//  The function retrieves ALL data from Contact
-//  Be carefully !!
-//  URL : GET /Contact/all
-//  BODY: without BODY !!!
+//  The function makes SQL for the opRule from the body
+//  URL : POST /opRule/
+//  BODY: 
+//  {
+//     "cmd": "select" or "insert" or "update or "delete",
+//     "row_count": ... ,
+//     "params": {
+//         "cRule":...,
+//         "Rule":"...",
+//         "Rule_en":"..."
+//      }
+//  }
 // ---------------------------------------------------------
-function getAll_Contact(req, res, next) {
-    db.any('select * from Contact')
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ALL from Contact'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
-}
-
-// ---------------------------------------------------------
-//  The function retrieves data from Contact via primary key
-//  URL : GET /Contact/one/?cContact=...
-//  BODY: without BODY !!!
-// ---------------------------------------------------------
-function getSingle_Contact(req, res, next) {
-    var errStr = '';
-    if(!req.query.cContact)
-        errStr += 'cContact undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+function opRule_makeQuery(req, res, next) {
+    if( req.body.cmd === undefined )
+        return next( new Error('keyword cmd not found in the body!'));
+    switch(req.body.cmd.toString().toLowerCase()) {
+    case 'select':
+        opRule_DoSelect(req, res, next);
+        break;
+    case 'insert':
+        opRule_DoInsert(req, res, next);
+        break;
+    case 'update':
+        opRule_DoUpdate(req, res, next);
+        break;
+    case 'delete':
+        opRule_DoDelete(req, res, next);
+        break;
+    default:
+        return next( new Error('cmd ' + req.body.cmd + " is unknow!"));
     }
-    db.one('select * from Contact where cContact = $1',req.query.cContact)
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ONE Contact'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
 }
 
-// ---------------------------------------------------------
-//  The function retrieves data from Contact using WHERE clause
-//  URL : GET /Contact/any/?cAgent=...&pId=...&key=...&phrase=...&Memo=...&stateId=...
-//  BODY: without BODY !!!
-// ---------------------------------------------------------
-function getWhere_Contact(req, res, next) {
-   var whereStr = '';
-   if(req.query.cAgent)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " cAgent = " + req.query.cAgent.trim();
-   }
-   if(req.query.pId)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " pId = " + req.query.pId.trim();
-   }
-   if(req.query.key)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " key LIKE '%" + req.query.key.trim() + "%'";
-   }
-   if(req.query.phrase)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " phrase LIKE '%" + req.query.phrase.trim() + "%'";
-   }
-   if(req.query.Memo)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " Memo = " + req.query.Memo.trim();
-   }
-   if(req.query.stateId)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " stateId = " + req.query.stateId.trim();
-   }
-    if(whereStr.length==0)
-    {
-        next(new Error("No any predicates!"));
-        return;
+
+var Contact_collist_all = ['ccontact','cagent','pid','key','phrase','memo','stateid'];
+function Contact_HasColname(colname) {
+    return (Contact_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
+}
+
+var Contact_collist_keys = ['ccontact'];
+function Contact_HasKeyname(keyname) {
+    return (Contact_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
+}
+
+function Contact_makeWhere(req, next) {
+    var whereStr = '';
+    if(req.body.params === undefined)
+        return whereStr;
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(Contact_HasColname(parstr)) {
+            switch(parstr) {
+            case 'ccontact':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " ccontact = ${" + parnext + "}";
+                }
+                break;
+            case 'cagent':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " cagent = ${" + parnext + "}";
+                }
+                break;
+            case 'pid':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " pid = ${" + parnext + "}";
+                }
+                break;
+            case 'key':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " key LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
+                }
+                break;
+            case 'phrase':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " phrase LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
+                }
+                break;
+            case 'memo':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " memo = ${" + parnext + "}";
+                }
+                break;
+            case 'stateid':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " stateid = ${" + parnext + "}";
+                }
+                break;
+            }
+        } else {
+            next(new Error('column ' + parnext + " not exists in contact!"));
+            return "ERROR";
+        }
     }
-    db.one('select * from Contact ' + whereStr)
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ONE Contact'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
+    return whereStr;
 }
 
-// ---------------------------------------------------------
-//  The function retrieves data from Contact using WHERE clause
-//  URL : POST /Contact/query/
-//  BODY: cContact=...&cAgent=...&pId=...&key=...&phrase=...&Memo=...&stateId=...
-// ---------------------------------------------------------
-function getPostWhere_Contact(req, res, next) {
-   var whereStr = '';
-   if(req.body.cContact)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " cContact = " + req.body.cContact.trim();
-   }
-   if(req.body.cAgent)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " cAgent = " + req.body.cAgent.trim();
-   }
-   if(req.body.pId)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " pId = " + req.body.pId.trim();
-   }
-   if(req.body.key)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " key LIKE '%" + req.body.key.trim() + "%'";
-   }
-   if(req.body.phrase)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " phrase LIKE '%" + req.body.phrase.trim() + "%'";
-   }
-   if(req.body.Memo)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " Memo = " + req.body.Memo.trim();
-   }
-   if(req.body.stateId)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " stateId = " + req.body.stateId.trim();
-   }
-   var sqlStr = 'select * from Contact ' + whereStr;
-
+function Contact_DoSelect(req, res, next) {
+    var whereStr = Contact_makeWhere(req, next);
+    if(whereStr == "ERROR")
+        return;
+    var sqlStr = 'SELECT * FROM contact ' + whereStr;
     if (app.get('env') === 'development') {
-      console.log( sqlStr );
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
     }
-    db.one(sqlStr)
+    db.any(sqlStr, req.body.params)
         .then(function (data) {
             res.status(200)
                 .json({
                     status: 'success',
                     data: data,
-                    message: 'Retrieved ONE Contact'
+                    message: 'Retrieved from contact'
+            });
+        })
+        .catch(function (err) {
+            return next(err);
+    });
+}
+
+function Contact_DoInsert(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('insert params not found!'));
+    }
+    var parList = '';
+    var parValues = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(Contact_HasColname(parstr)) {
+            parList = makeList(parList);
+            parList += parstr;
+            parValues = makeList(parValues);
+            parValues += "${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " not exists in contact!"));
+        }
+    }
+    if(parList.length == 0)
+        return next(new Error('not found any fields for insert into contact!'));
+    var sqlStr = "INSERT INTO contact(" + parList + ") VALUES (" + parValues + ") RETURNING ccontact";
+    if (app.get('env') === 'development') {
+       // console.log( sqlStr );
+       console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.one(sqlStr, req.body.params)
+        .then(function (data) {
+            res.status(200)
+                .json({
+                    status: 'success',
+                    data: data,
+                    message: 'Inserted into contact'
                 });
         })
         .catch(function (err) {
@@ -2452,21 +2477,39 @@ function getPostWhere_Contact(req, res, next) {
     });
 }
 
-// ---------------------------------------------------------
-//  The function insert data into Contact
-//  URL : POST /Contact
-//  BODY:cAgent=...&pId=...&key=...&phrase=...&Memo=...&stateId=...
-// ---------------------------------------------------------
-function create_Contact(req, res, next) {
-    db.one('insert into Contact(cAgent,pId,key,phrase,Memo,stateId)' +
-            'values(${cAgent},${pId},${key},${phrase},${Memo},${stateId}) returning cContact',
-             req.body)
-        .then(function (data) {
+function Contact_DoUpdate(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('update params not found!'));
+    }
+    var setStr = '';
+    var whereStr = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(Contact_HasKeyname(parstr)) {
+            whereStr = makeWhere(whereStr);
+            whereStr += parstr + "=${" + parnext + "}";
+        } else if(Contact_HasColname(parstr)) {
+            setStr = makeSet(setStr);
+            setStr += parstr + "=${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " not exists in contact!"));
+        }
+    }
+    if(setStr.length == 0)
+        return next(new Error('not found any fields for update the contact!'));
+    if(whereStr.length == 0)
+        return next(new Error('not found any keys for update the contact!'));
+    var sqlStr = "UPDATE contact " + setStr + " " + whereStr;
+    if (app.get('env') === 'development') {
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.result(sqlStr, req.body.params)
+        .then(function (result) {
             res.status(200)
                 .json({
                     status: 'success',
-                    data: data,
-                    message: 'Inserted one Contact'
+                    message: `Updated ${result.rowCount} from contact`
                 });
         })
         .catch(function (err) {
@@ -2474,55 +2517,34 @@ function create_Contact(req, res, next) {
     });
 }
 
-// ---------------------------------------------------------
-//  The function update data in Contact
-//  URL : PUT /Contact
-//  BODY: cContact=...&cAgent=...&pId=...&key=...&phrase=...&Memo=...&stateId=...
-// ---------------------------------------------------------
-function update_Contact(req, res, next) {
-    var errStr = '';
-    if(!req.body.cContact)
-        errStr += 'cContact undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+function Contact_DoDelete(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('delete params not found!'));
     }
-    db.none('update Contact set cAgent=${cAgent}, pId=${pId}, key=${key}, phrase=${phrase}, Memo=${Memo}, stateId=${stateId} where cContact=${cContact}',
-             req.body)
-        .then(function () {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    message: 'Updated Contact'
-                });
-        })
-        .catch(function (err) {
-      return next(err);
-    });
-}
-
-// ---------------------------------------------------------
-//  The function deletes data from Contact
-//  URL : DELETE /Contact/
-//  BODY: cContact=...
-// ---------------------------------------------------------
-function remove_Contact(req, res, next) {
-    var errStr = '';
-    if(!req.body.cContact)
-        errStr += 'cContact undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+    var whereStr = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(Contact_HasKeyname(parstr)) {
+            whereStr = makeWhere(whereStr);
+            whereStr += parstr + "=${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " is not key columns in contact!"));
+        }
     }
-    db.result('delete from Contact where cContact = $1',req.body.cContact)
+    if(whereStr.length == 0)
+        return next(new Error('not found any keys for delete from the contact!'));
+    var sqlStr = "DELETE FROM contact " + whereStr;
+    if (app.get('env') === 'development') {
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.result(sqlStr, req.body.params)
         .then(function (result) {
             /* jshint ignore:start */
             res.status(200)
                 .json({
-                status: 'success',
-                message: `Removed ${result.rowCount} Contact`
+                    status: 'success',
+                    message: `Removed ${result.rowCount} from contact`
             });
             /* jshint ignore:end */
         })
@@ -2531,126 +2553,145 @@ function remove_Contact(req, res, next) {
     });
 }
 
-
 // ---------------------------------------------------------
-//  The function retrieves ALL data from Agent
-//  Be carefully !!
-//  URL : GET /Agent/all
-//  BODY: without BODY !!!
+//  The function makes SQL for the Contact from the body
+//  URL : POST /Contact/
+//  BODY: 
+//  {
+//     "cmd": "select" or "insert" or "update or "delete",
+//     "row_count": ... ,
+//     "params": {
+//         "cContact":...,
+//         "cAgent":...,
+//         "pId":"...",
+//         "key":"...",
+//         "phrase":"...",
+//         "Memo":"...",
+//         "stateId":"..."
+//      }
+//  }
 // ---------------------------------------------------------
-function getAll_Agent(req, res, next) {
-    db.any('select * from Agent')
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ALL from Agent'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
-}
-
-// ---------------------------------------------------------
-//  The function retrieves data from Agent via primary key
-//  URL : GET /Agent/one/?cAgent=...
-//  BODY: without BODY !!!
-// ---------------------------------------------------------
-function getSingle_Agent(req, res, next) {
-    var errStr = '';
-    if(!req.query.cAgent)
-        errStr += 'cAgent undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+function Contact_makeQuery(req, res, next) {
+    if( req.body.cmd === undefined )
+        return next( new Error('keyword cmd not found in the body!'));
+    switch(req.body.cmd.toString().toLowerCase()) {
+    case 'select':
+        Contact_DoSelect(req, res, next);
+        break;
+    case 'insert':
+        Contact_DoInsert(req, res, next);
+        break;
+    case 'update':
+        Contact_DoUpdate(req, res, next);
+        break;
+    case 'delete':
+        Contact_DoDelete(req, res, next);
+        break;
+    default:
+        return next( new Error('cmd ' + req.body.cmd + " is unknow!"));
     }
-    db.one('select * from Agent where cAgent = $1',req.query.cAgent)
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ONE Agent'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
 }
 
-// ---------------------------------------------------------
-//  The function retrieves data from Agent using WHERE clause
-//  URL : GET /Agent/any/?Agent=...&Memo=...
-//  BODY: without BODY !!!
-// ---------------------------------------------------------
-function getWhere_Agent(req, res, next) {
-   var whereStr = '';
-   if(req.query.Agent)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " Agent LIKE '%" + req.query.Agent.trim() + "%'";
-   }
-   if(req.query.Memo)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " Memo = " + req.query.Memo.trim();
-   }
-    if(whereStr.length==0)
-    {
-        next(new Error("No any predicates!"));
-        return;
+
+var Agent_collist_all = ['cagent','agent','memo'];
+function Agent_HasColname(colname) {
+    return (Agent_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
+}
+
+var Agent_collist_keys = ['cagent'];
+function Agent_HasKeyname(keyname) {
+    return (Agent_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
+}
+
+function Agent_makeWhere(req, next) {
+    var whereStr = '';
+    if(req.body.params === undefined)
+        return whereStr;
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(Agent_HasColname(parstr)) {
+            switch(parstr) {
+            case 'cagent':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " cagent = ${" + parnext + "}";
+                }
+                break;
+            case 'agent':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " agent LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
+                }
+                break;
+            case 'memo':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " memo = ${" + parnext + "}";
+                }
+                break;
+            }
+        } else {
+            next(new Error('column ' + parnext + " not exists in agent!"));
+            return "ERROR";
+        }
     }
-    db.one('select * from Agent ' + whereStr)
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ONE Agent'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
+    return whereStr;
 }
 
-// ---------------------------------------------------------
-//  The function retrieves data from Agent using WHERE clause
-//  URL : POST /Agent/query/
-//  BODY: cAgent=...&Agent=...&Memo=...
-// ---------------------------------------------------------
-function getPostWhere_Agent(req, res, next) {
-   var whereStr = '';
-   if(req.body.cAgent)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " cAgent = " + req.body.cAgent.trim();
-   }
-   if(req.body.Agent)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " Agent LIKE '%" + req.body.Agent.trim() + "%'";
-   }
-   if(req.body.Memo)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " Memo = " + req.body.Memo.trim();
-   }
-   var sqlStr = 'select * from Agent ' + whereStr;
-
+function Agent_DoSelect(req, res, next) {
+    var whereStr = Agent_makeWhere(req, next);
+    if(whereStr == "ERROR")
+        return;
+    var sqlStr = 'SELECT * FROM agent ' + whereStr;
     if (app.get('env') === 'development') {
-      console.log( sqlStr );
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
     }
-    db.one(sqlStr)
+    db.any(sqlStr, req.body.params)
         .then(function (data) {
             res.status(200)
                 .json({
                     status: 'success',
                     data: data,
-                    message: 'Retrieved ONE Agent'
+                    message: 'Retrieved from agent'
+            });
+        })
+        .catch(function (err) {
+            return next(err);
+    });
+}
+
+function Agent_DoInsert(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('insert params not found!'));
+    }
+    var parList = '';
+    var parValues = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(Agent_HasColname(parstr)) {
+            parList = makeList(parList);
+            parList += parstr;
+            parValues = makeList(parValues);
+            parValues += "${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " not exists in agent!"));
+        }
+    }
+    if(parList.length == 0)
+        return next(new Error('not found any fields for insert into agent!'));
+    var sqlStr = "INSERT INTO agent(" + parList + ") VALUES (" + parValues + ") RETURNING cagent";
+    if (app.get('env') === 'development') {
+       // console.log( sqlStr );
+       console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.one(sqlStr, req.body.params)
+        .then(function (data) {
+            res.status(200)
+                .json({
+                    status: 'success',
+                    data: data,
+                    message: 'Inserted into agent'
                 });
         })
         .catch(function (err) {
@@ -2658,21 +2699,39 @@ function getPostWhere_Agent(req, res, next) {
     });
 }
 
-// ---------------------------------------------------------
-//  The function insert data into Agent
-//  URL : POST /Agent
-//  BODY:Agent=...&Memo=...
-// ---------------------------------------------------------
-function create_Agent(req, res, next) {
-    db.one('insert into Agent(Agent,Memo)' +
-            'values(${Agent},${Memo}) returning cAgent',
-             req.body)
-        .then(function (data) {
+function Agent_DoUpdate(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('update params not found!'));
+    }
+    var setStr = '';
+    var whereStr = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(Agent_HasKeyname(parstr)) {
+            whereStr = makeWhere(whereStr);
+            whereStr += parstr + "=${" + parnext + "}";
+        } else if(Agent_HasColname(parstr)) {
+            setStr = makeSet(setStr);
+            setStr += parstr + "=${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " not exists in agent!"));
+        }
+    }
+    if(setStr.length == 0)
+        return next(new Error('not found any fields for update the agent!'));
+    if(whereStr.length == 0)
+        return next(new Error('not found any keys for update the agent!'));
+    var sqlStr = "UPDATE agent " + setStr + " " + whereStr;
+    if (app.get('env') === 'development') {
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.result(sqlStr, req.body.params)
+        .then(function (result) {
             res.status(200)
                 .json({
                     status: 'success',
-                    data: data,
-                    message: 'Inserted one Agent'
+                    message: `Updated ${result.rowCount} from agent`
                 });
         })
         .catch(function (err) {
@@ -2680,55 +2739,34 @@ function create_Agent(req, res, next) {
     });
 }
 
-// ---------------------------------------------------------
-//  The function update data in Agent
-//  URL : PUT /Agent
-//  BODY: cAgent=...&Agent=...&Memo=...
-// ---------------------------------------------------------
-function update_Agent(req, res, next) {
-    var errStr = '';
-    if(!req.body.cAgent)
-        errStr += 'cAgent undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+function Agent_DoDelete(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('delete params not found!'));
     }
-    db.none('update Agent set Agent=${Agent}, Memo=${Memo} where cAgent=${cAgent}',
-             req.body)
-        .then(function () {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    message: 'Updated Agent'
-                });
-        })
-        .catch(function (err) {
-      return next(err);
-    });
-}
-
-// ---------------------------------------------------------
-//  The function deletes data from Agent
-//  URL : DELETE /Agent/
-//  BODY: cAgent=...
-// ---------------------------------------------------------
-function remove_Agent(req, res, next) {
-    var errStr = '';
-    if(!req.body.cAgent)
-        errStr += 'cAgent undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+    var whereStr = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(Agent_HasKeyname(parstr)) {
+            whereStr = makeWhere(whereStr);
+            whereStr += parstr + "=${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " is not key columns in agent!"));
+        }
     }
-    db.result('delete from Agent where cAgent = $1',req.body.cAgent)
+    if(whereStr.length == 0)
+        return next(new Error('not found any keys for delete from the agent!'));
+    var sqlStr = "DELETE FROM agent " + whereStr;
+    if (app.get('env') === 'development') {
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.result(sqlStr, req.body.params)
         .then(function (result) {
             /* jshint ignore:start */
             res.status(200)
                 .json({
-                status: 'success',
-                message: `Removed ${result.rowCount} Agent`
+                    status: 'success',
+                    message: `Removed ${result.rowCount} from agent`
             });
             /* jshint ignore:end */
         })
@@ -2737,123 +2775,140 @@ function remove_Agent(req, res, next) {
     });
 }
 
-
 // ---------------------------------------------------------
-//  The function retrieves ALL data from access
-//  Be carefully !!
-//  URL : GET /access/all
-//  BODY: without BODY !!!
+//  The function makes SQL for the Agent from the body
+//  URL : POST /Agent/
+//  BODY: 
+//  {
+//     "cmd": "select" or "insert" or "update or "delete",
+//     "row_count": ... ,
+//     "params": {
+//         "cAgent":...,
+//         "Agent":"...",
+//         "Memo":"..."
+//      }
+//  }
 // ---------------------------------------------------------
-function getAll_access(req, res, next) {
-    db.any('select * from access')
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ALL from access'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
-}
-
-// ---------------------------------------------------------
-//  The function retrieves data from access via primary key
-//  URL : GET /access/one/?cOper=...&pId=...
-//  BODY: without BODY !!!
-// ---------------------------------------------------------
-function getSingle_access(req, res, next) {
-    var errStr = '';
-    if(!req.query.cOper)
-        errStr += 'cOper undefined! ';
-    if(!req.query.pId)
-        errStr += 'pId undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+function Agent_makeQuery(req, res, next) {
+    if( req.body.cmd === undefined )
+        return next( new Error('keyword cmd not found in the body!'));
+    switch(req.body.cmd.toString().toLowerCase()) {
+    case 'select':
+        Agent_DoSelect(req, res, next);
+        break;
+    case 'insert':
+        Agent_DoInsert(req, res, next);
+        break;
+    case 'update':
+        Agent_DoUpdate(req, res, next);
+        break;
+    case 'delete':
+        Agent_DoDelete(req, res, next);
+        break;
+    default:
+        return next( new Error('cmd ' + req.body.cmd + " is unknow!"));
     }
-    db.one('select * from access where cOper = $1 and pId = $2',req.query.cOper, req.query.pId)
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ONE access'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
 }
 
-// ---------------------------------------------------------
-//  The function retrieves data from access using WHERE clause
-//  URL : GET /access/any/?stateId=...
-//  BODY: without BODY !!!
-// ---------------------------------------------------------
-function getWhere_access(req, res, next) {
-   var whereStr = '';
-   if(req.query.stateId)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " stateId = " + req.query.stateId.trim();
-   }
-    if(whereStr.length==0)
-    {
-        next(new Error("No any predicates!"));
-        return;
+
+var access_collist_all = ['coper','pid','stateid'];
+function access_HasColname(colname) {
+    return (access_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
+}
+
+var access_collist_keys = ['coper','pid'];
+function access_HasKeyname(keyname) {
+    return (access_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
+}
+
+function access_makeWhere(req, next) {
+    var whereStr = '';
+    if(req.body.params === undefined)
+        return whereStr;
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(access_HasColname(parstr)) {
+            switch(parstr) {
+            case 'coper':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " coper = ${" + parnext + "}";
+                }
+                break;
+            case 'pid':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " pid = ${" + parnext + "}";
+                }
+                break;
+            case 'stateid':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " stateid = ${" + parnext + "}";
+                }
+                break;
+            }
+        } else {
+            next(new Error('column ' + parnext + " not exists in access!"));
+            return "ERROR";
+        }
     }
-    db.one('select * from access ' + whereStr)
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ONE access'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
+    return whereStr;
 }
 
-// ---------------------------------------------------------
-//  The function retrieves data from access using WHERE clause
-//  URL : POST /access/query/
-//  BODY: cOper=...&pId=...&stateId=...
-// ---------------------------------------------------------
-function getPostWhere_access(req, res, next) {
-   var whereStr = '';
-   if(req.body.cOper)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " cOper = " + req.body.cOper.trim();
-   }
-   if(req.body.pId)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " pId = " + req.body.pId.trim();
-   }
-   if(req.body.stateId)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " stateId = " + req.body.stateId.trim();
-   }
-   var sqlStr = 'select * from access ' + whereStr;
-
+function access_DoSelect(req, res, next) {
+    var whereStr = access_makeWhere(req, next);
+    if(whereStr == "ERROR")
+        return;
+    var sqlStr = 'SELECT * FROM access ' + whereStr;
     if (app.get('env') === 'development') {
-      console.log( sqlStr );
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
     }
-    db.one(sqlStr)
+    db.any(sqlStr, req.body.params)
         .then(function (data) {
             res.status(200)
                 .json({
                     status: 'success',
                     data: data,
-                    message: 'Retrieved ONE access'
+                    message: 'Retrieved from access'
+            });
+        })
+        .catch(function (err) {
+            return next(err);
+    });
+}
+
+function access_DoInsert(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('insert params not found!'));
+    }
+    var parList = '';
+    var parValues = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(access_HasColname(parstr)) {
+            parList = makeList(parList);
+            parList += parstr;
+            parValues = makeList(parValues);
+            parValues += "${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " not exists in access!"));
+        }
+    }
+    if(parList.length == 0)
+        return next(new Error('not found any fields for insert into access!'));
+    var sqlStr = "INSERT INTO access(" + parList + ") VALUES (" + parValues + ")";
+    if (app.get('env') === 'development') {
+       // console.log( sqlStr );
+       console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.none(sqlStr, req.body.params)
+        .then(function () {
+            res.status(200)
+                .json({
+                    status: 'success',
+                    message: 'Inserted into access'
                 });
         })
         .catch(function (err) {
@@ -2861,30 +2916,39 @@ function getPostWhere_access(req, res, next) {
     });
 }
 
-// ---------------------------------------------------------
-//  The function insert data into access
-//  URL : POST /access
-//  BODY:cOper=...&pId=...&stateId=...
-// ---------------------------------------------------------
-function create_access(req, res, next) {
-    var errStr = '';
-    if(!req.body.cOper)
-        errStr += 'cOper undefined! ';
-    if(!req.body.pId)
-        errStr += 'pId undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+function access_DoUpdate(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('update params not found!'));
     }
-    db.none('insert into access(cOper,pId,stateId)' +
-            'values(${cOper},${pId},${stateId})',
-             req.body)
-        .then(function () {
+    var setStr = '';
+    var whereStr = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(access_HasKeyname(parstr)) {
+            whereStr = makeWhere(whereStr);
+            whereStr += parstr + "=${" + parnext + "}";
+        } else if(access_HasColname(parstr)) {
+            setStr = makeSet(setStr);
+            setStr += parstr + "=${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " not exists in access!"));
+        }
+    }
+    if(setStr.length == 0)
+        return next(new Error('not found any fields for update the access!'));
+    if(whereStr.length == 0)
+        return next(new Error('not found any keys for update the access!'));
+    var sqlStr = "UPDATE access " + setStr + " " + whereStr;
+    if (app.get('env') === 'development') {
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.result(sqlStr, req.body.params)
+        .then(function (result) {
             res.status(200)
                 .json({
                     status: 'success',
-                    message: 'Inserted one access'
+                    message: `Updated ${result.rowCount} from access`
                 });
         })
         .catch(function (err) {
@@ -2892,59 +2956,34 @@ function create_access(req, res, next) {
     });
 }
 
-// ---------------------------------------------------------
-//  The function update data in access
-//  URL : PUT /access
-//  BODY: cOper=...&pId=...&stateId=...
-// ---------------------------------------------------------
-function update_access(req, res, next) {
-    var errStr = '';
-    if(!req.body.cOper)
-        errStr += 'cOper undefined! ';
-    if(!req.body.pId)
-        errStr += 'pId undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+function access_DoDelete(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('delete params not found!'));
     }
-    db.none('update access set stateId=${stateId} where cOper=${cOper} and pId=${pId}',
-             req.body)
-        .then(function () {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    message: 'Updated access'
-                });
-        })
-        .catch(function (err) {
-      return next(err);
-    });
-}
-
-// ---------------------------------------------------------
-//  The function deletes data from access
-//  URL : DELETE /access/
-//  BODY: cOper=...&pId=...
-// ---------------------------------------------------------
-function remove_access(req, res, next) {
-    var errStr = '';
-    if(!req.body.cOper)
-        errStr += 'cOper undefined! ';
-    if(!req.body.pId)
-        errStr += 'pId undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+    var whereStr = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(access_HasKeyname(parstr)) {
+            whereStr = makeWhere(whereStr);
+            whereStr += parstr + "=${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " is not key columns in access!"));
+        }
     }
-    db.result('delete from access where cOper = $1 and pId = $2',req.body.cOper, req.body.pId)
+    if(whereStr.length == 0)
+        return next(new Error('not found any keys for delete from the access!'));
+    var sqlStr = "DELETE FROM access " + whereStr;
+    if (app.get('env') === 'development') {
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.result(sqlStr, req.body.params)
         .then(function (result) {
             /* jshint ignore:start */
             res.status(200)
                 .json({
-                status: 'success',
-                message: `Removed ${result.rowCount} access`
+                    status: 'success',
+                    message: `Removed ${result.rowCount} from access`
             });
             /* jshint ignore:end */
         })
@@ -2953,126 +2992,140 @@ function remove_access(req, res, next) {
     });
 }
 
-
 // ---------------------------------------------------------
-//  The function retrieves ALL data from docImage
-//  Be carefully !!
-//  URL : GET /docImage/all
-//  BODY: without BODY !!!
+//  The function makes SQL for the access from the body
+//  URL : POST /access/
+//  BODY: 
+//  {
+//     "cmd": "select" or "insert" or "update or "delete",
+//     "row_count": ... ,
+//     "params": {
+//         "cOper":...,
+//         "pId":"...",
+//         "stateId":"..."
+//      }
+//  }
 // ---------------------------------------------------------
-function getAll_docImage(req, res, next) {
-    db.any('select * from docImage')
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ALL from docImage'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
-}
-
-// ---------------------------------------------------------
-//  The function retrieves data from docImage via primary key
-//  URL : GET /docImage/one/?pageN=...
-//  BODY: without BODY !!!
-// ---------------------------------------------------------
-function getSingle_docImage(req, res, next) {
-    var errStr = '';
-    if(!req.query.pageN)
-        errStr += 'pageN undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+function access_makeQuery(req, res, next) {
+    if( req.body.cmd === undefined )
+        return next( new Error('keyword cmd not found in the body!'));
+    switch(req.body.cmd.toString().toLowerCase()) {
+    case 'select':
+        access_DoSelect(req, res, next);
+        break;
+    case 'insert':
+        access_DoInsert(req, res, next);
+        break;
+    case 'update':
+        access_DoUpdate(req, res, next);
+        break;
+    case 'delete':
+        access_DoDelete(req, res, next);
+        break;
+    default:
+        return next( new Error('cmd ' + req.body.cmd + " is unknow!"));
     }
-    db.one('select * from docImage where pageN = $1',req.query.pageN)
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ONE docImage'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
 }
 
-// ---------------------------------------------------------
-//  The function retrieves data from docImage using WHERE clause
-//  URL : GET /docImage/any/?cDoc=...&image=...
-//  BODY: without BODY !!!
-// ---------------------------------------------------------
-function getWhere_docImage(req, res, next) {
-   var whereStr = '';
-   if(req.query.cDoc)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " cDoc = " + req.query.cDoc.trim();
-   }
-   if(req.query.image)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " image LIKE '%" + req.query.image.trim() + "%'";
-   }
-    if(whereStr.length==0)
-    {
-        next(new Error("No any predicates!"));
-        return;
+
+var docImage_collist_all = ['pagen','cdoc','image'];
+function docImage_HasColname(colname) {
+    return (docImage_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
+}
+
+var docImage_collist_keys = ['pagen'];
+function docImage_HasKeyname(keyname) {
+    return (docImage_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
+}
+
+function docImage_makeWhere(req, next) {
+    var whereStr = '';
+    if(req.body.params === undefined)
+        return whereStr;
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(docImage_HasColname(parstr)) {
+            switch(parstr) {
+            case 'pagen':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " pagen = ${" + parnext + "}";
+                }
+                break;
+            case 'cdoc':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " cdoc = ${" + parnext + "}";
+                }
+                break;
+            case 'image':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " image LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
+                }
+                break;
+            }
+        } else {
+            next(new Error('column ' + parnext + " not exists in docimage!"));
+            return "ERROR";
+        }
     }
-    db.one('select * from docImage ' + whereStr)
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ONE docImage'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
+    return whereStr;
 }
 
-// ---------------------------------------------------------
-//  The function retrieves data from docImage using WHERE clause
-//  URL : POST /docImage/query/
-//  BODY: pageN=...&cDoc=...&image=...
-// ---------------------------------------------------------
-function getPostWhere_docImage(req, res, next) {
-   var whereStr = '';
-   if(req.body.pageN)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " pageN = " + req.body.pageN.trim();
-   }
-   if(req.body.cDoc)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " cDoc = " + req.body.cDoc.trim();
-   }
-   if(req.body.image)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " image LIKE '%" + req.body.image.trim() + "%'";
-   }
-   var sqlStr = 'select * from docImage ' + whereStr;
-
+function docImage_DoSelect(req, res, next) {
+    var whereStr = docImage_makeWhere(req, next);
+    if(whereStr == "ERROR")
+        return;
+    var sqlStr = 'SELECT * FROM docimage ' + whereStr;
     if (app.get('env') === 'development') {
-      console.log( sqlStr );
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
     }
-    db.one(sqlStr)
+    db.any(sqlStr, req.body.params)
         .then(function (data) {
             res.status(200)
                 .json({
                     status: 'success',
                     data: data,
-                    message: 'Retrieved ONE docImage'
+                    message: 'Retrieved from docimage'
+            });
+        })
+        .catch(function (err) {
+            return next(err);
+    });
+}
+
+function docImage_DoInsert(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('insert params not found!'));
+    }
+    var parList = '';
+    var parValues = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(docImage_HasColname(parstr)) {
+            parList = makeList(parList);
+            parList += parstr;
+            parValues = makeList(parValues);
+            parValues += "${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " not exists in docimage!"));
+        }
+    }
+    if(parList.length == 0)
+        return next(new Error('not found any fields for insert into docimage!'));
+    var sqlStr = "INSERT INTO docimage(" + parList + ") VALUES (" + parValues + ")";
+    if (app.get('env') === 'development') {
+       // console.log( sqlStr );
+       console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.none(sqlStr, req.body.params)
+        .then(function () {
+            res.status(200)
+                .json({
+                    status: 'success',
+                    message: 'Inserted into docimage'
                 });
         })
         .catch(function (err) {
@@ -3080,28 +3133,39 @@ function getPostWhere_docImage(req, res, next) {
     });
 }
 
-// ---------------------------------------------------------
-//  The function insert data into docImage
-//  URL : POST /docImage
-//  BODY:pageN=...&cDoc=...&image=...
-// ---------------------------------------------------------
-function create_docImage(req, res, next) {
-    var errStr = '';
-    if(!req.body.pageN)
-        errStr += 'pageN undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+function docImage_DoUpdate(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('update params not found!'));
     }
-    db.none('insert into docImage(pageN,cDoc,image)' +
-            'values(${pageN},${cDoc},${image})',
-             req.body)
-        .then(function () {
+    var setStr = '';
+    var whereStr = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(docImage_HasKeyname(parstr)) {
+            whereStr = makeWhere(whereStr);
+            whereStr += parstr + "=${" + parnext + "}";
+        } else if(docImage_HasColname(parstr)) {
+            setStr = makeSet(setStr);
+            setStr += parstr + "=${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " not exists in docimage!"));
+        }
+    }
+    if(setStr.length == 0)
+        return next(new Error('not found any fields for update the docimage!'));
+    if(whereStr.length == 0)
+        return next(new Error('not found any keys for update the docimage!'));
+    var sqlStr = "UPDATE docimage " + setStr + " " + whereStr;
+    if (app.get('env') === 'development') {
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.result(sqlStr, req.body.params)
+        .then(function (result) {
             res.status(200)
                 .json({
                     status: 'success',
-                    message: 'Inserted one docImage'
+                    message: `Updated ${result.rowCount} from docimage`
                 });
         })
         .catch(function (err) {
@@ -3109,55 +3173,34 @@ function create_docImage(req, res, next) {
     });
 }
 
-// ---------------------------------------------------------
-//  The function update data in docImage
-//  URL : PUT /docImage
-//  BODY: pageN=...&cDoc=...&image=...
-// ---------------------------------------------------------
-function update_docImage(req, res, next) {
-    var errStr = '';
-    if(!req.body.pageN)
-        errStr += 'pageN undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+function docImage_DoDelete(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('delete params not found!'));
     }
-    db.none('update docImage set cDoc=${cDoc}, image=${image} where pageN=${pageN}',
-             req.body)
-        .then(function () {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    message: 'Updated docImage'
-                });
-        })
-        .catch(function (err) {
-      return next(err);
-    });
-}
-
-// ---------------------------------------------------------
-//  The function deletes data from docImage
-//  URL : DELETE /docImage/
-//  BODY: pageN=...
-// ---------------------------------------------------------
-function remove_docImage(req, res, next) {
-    var errStr = '';
-    if(!req.body.pageN)
-        errStr += 'pageN undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+    var whereStr = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(docImage_HasKeyname(parstr)) {
+            whereStr = makeWhere(whereStr);
+            whereStr += parstr + "=${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " is not key columns in docimage!"));
+        }
     }
-    db.result('delete from docImage where pageN = $1',req.body.pageN)
+    if(whereStr.length == 0)
+        return next(new Error('not found any keys for delete from the docimage!'));
+    var sqlStr = "DELETE FROM docimage " + whereStr;
+    if (app.get('env') === 'development') {
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.result(sqlStr, req.body.params)
         .then(function (result) {
             /* jshint ignore:start */
             res.status(200)
                 .json({
-                status: 'success',
-                message: `Removed ${result.rowCount} docImage`
+                    status: 'success',
+                    message: `Removed ${result.rowCount} from docimage`
             });
             /* jshint ignore:end */
         })
@@ -3166,123 +3209,140 @@ function remove_docImage(req, res, next) {
     });
 }
 
-
 // ---------------------------------------------------------
-//  The function retrieves ALL data from ref
-//  Be carefully !!
-//  URL : GET /ref/all
-//  BODY: without BODY !!!
+//  The function makes SQL for the docImage from the body
+//  URL : POST /docImage/
+//  BODY: 
+//  {
+//     "cmd": "select" or "insert" or "update or "delete",
+//     "row_count": ... ,
+//     "params": {
+//         "pageN":...,
+//         "cDoc":...,
+//         "image":"..."
+//      }
+//  }
 // ---------------------------------------------------------
-function getAll_ref(req, res, next) {
-    db.any('select * from ref')
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ALL from ref'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
-}
-
-// ---------------------------------------------------------
-//  The function retrieves data from ref via primary key
-//  URL : GET /ref/one/?pId=...&per_pId=...
-//  BODY: without BODY !!!
-// ---------------------------------------------------------
-function getSingle_ref(req, res, next) {
-    var errStr = '';
-    if(!req.query.pId)
-        errStr += 'pId undefined! ';
-    if(!req.query.per_pId)
-        errStr += 'per_pId undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+function docImage_makeQuery(req, res, next) {
+    if( req.body.cmd === undefined )
+        return next( new Error('keyword cmd not found in the body!'));
+    switch(req.body.cmd.toString().toLowerCase()) {
+    case 'select':
+        docImage_DoSelect(req, res, next);
+        break;
+    case 'insert':
+        docImage_DoInsert(req, res, next);
+        break;
+    case 'update':
+        docImage_DoUpdate(req, res, next);
+        break;
+    case 'delete':
+        docImage_DoDelete(req, res, next);
+        break;
+    default:
+        return next( new Error('cmd ' + req.body.cmd + " is unknow!"));
     }
-    db.one('select * from ref where pId = $1 and per_pId = $2',req.query.pId, req.query.per_pId)
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ONE ref'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
 }
 
-// ---------------------------------------------------------
-//  The function retrieves data from ref using WHERE clause
-//  URL : GET /ref/any/?Memo=...
-//  BODY: without BODY !!!
-// ---------------------------------------------------------
-function getWhere_ref(req, res, next) {
-   var whereStr = '';
-   if(req.query.Memo)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " Memo = " + req.query.Memo.trim();
-   }
-    if(whereStr.length==0)
-    {
-        next(new Error("No any predicates!"));
-        return;
+
+var ref_collist_all = ['pid','per_pid','memo'];
+function ref_HasColname(colname) {
+    return (ref_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
+}
+
+var ref_collist_keys = ['pid','per_pid'];
+function ref_HasKeyname(keyname) {
+    return (ref_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
+}
+
+function ref_makeWhere(req, next) {
+    var whereStr = '';
+    if(req.body.params === undefined)
+        return whereStr;
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(ref_HasColname(parstr)) {
+            switch(parstr) {
+            case 'pid':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " pid = ${" + parnext + "}";
+                }
+                break;
+            case 'per_pid':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " per_pid = ${" + parnext + "}";
+                }
+                break;
+            case 'memo':
+                if(req.body.params[parnext])  {
+                    whereStr = makeWhere(whereStr);
+                    whereStr += " memo = ${" + parnext + "}";
+                }
+                break;
+            }
+        } else {
+            next(new Error('column ' + parnext + " not exists in ref!"));
+            return "ERROR";
+        }
     }
-    db.one('select * from ref ' + whereStr)
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ONE ref'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-    });
+    return whereStr;
 }
 
-// ---------------------------------------------------------
-//  The function retrieves data from ref using WHERE clause
-//  URL : POST /ref/query/
-//  BODY: pId=...&per_pId=...&Memo=...
-// ---------------------------------------------------------
-function getPostWhere_ref(req, res, next) {
-   var whereStr = '';
-   if(req.body.pId)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " pId = " + req.body.pId.trim();
-   }
-   if(req.body.per_pId)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " per_pId = " + req.body.per_pId.trim();
-   }
-   if(req.body.Memo)
-   {
-      whereStr = makeWhere(whereStr);
-      whereStr += " Memo = " + req.body.Memo.trim();
-   }
-   var sqlStr = 'select * from ref ' + whereStr;
-
+function ref_DoSelect(req, res, next) {
+    var whereStr = ref_makeWhere(req, next);
+    if(whereStr == "ERROR")
+        return;
+    var sqlStr = 'SELECT * FROM ref ' + whereStr;
     if (app.get('env') === 'development') {
-      console.log( sqlStr );
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
     }
-    db.one(sqlStr)
+    db.any(sqlStr, req.body.params)
         .then(function (data) {
             res.status(200)
                 .json({
                     status: 'success',
                     data: data,
-                    message: 'Retrieved ONE ref'
+                    message: 'Retrieved from ref'
+            });
+        })
+        .catch(function (err) {
+            return next(err);
+    });
+}
+
+function ref_DoInsert(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('insert params not found!'));
+    }
+    var parList = '';
+    var parValues = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(ref_HasColname(parstr)) {
+            parList = makeList(parList);
+            parList += parstr;
+            parValues = makeList(parValues);
+            parValues += "${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " not exists in ref!"));
+        }
+    }
+    if(parList.length == 0)
+        return next(new Error('not found any fields for insert into ref!'));
+    var sqlStr = "INSERT INTO ref(" + parList + ") VALUES (" + parValues + ")";
+    if (app.get('env') === 'development') {
+       // console.log( sqlStr );
+       console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.none(sqlStr, req.body.params)
+        .then(function () {
+            res.status(200)
+                .json({
+                    status: 'success',
+                    message: 'Inserted into ref'
                 });
         })
         .catch(function (err) {
@@ -3290,30 +3350,39 @@ function getPostWhere_ref(req, res, next) {
     });
 }
 
-// ---------------------------------------------------------
-//  The function insert data into ref
-//  URL : POST /ref
-//  BODY:pId=...&per_pId=...&Memo=...
-// ---------------------------------------------------------
-function create_ref(req, res, next) {
-    var errStr = '';
-    if(!req.body.pId)
-        errStr += 'pId undefined! ';
-    if(!req.body.per_pId)
-        errStr += 'per_pId undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+function ref_DoUpdate(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('update params not found!'));
     }
-    db.none('insert into ref(pId,per_pId,Memo)' +
-            'values(${pId},${per_pId},${Memo})',
-             req.body)
-        .then(function () {
+    var setStr = '';
+    var whereStr = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(ref_HasKeyname(parstr)) {
+            whereStr = makeWhere(whereStr);
+            whereStr += parstr + "=${" + parnext + "}";
+        } else if(ref_HasColname(parstr)) {
+            setStr = makeSet(setStr);
+            setStr += parstr + "=${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " not exists in ref!"));
+        }
+    }
+    if(setStr.length == 0)
+        return next(new Error('not found any fields for update the ref!'));
+    if(whereStr.length == 0)
+        return next(new Error('not found any keys for update the ref!'));
+    var sqlStr = "UPDATE ref " + setStr + " " + whereStr;
+    if (app.get('env') === 'development') {
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.result(sqlStr, req.body.params)
+        .then(function (result) {
             res.status(200)
                 .json({
                     status: 'success',
-                    message: 'Inserted one ref'
+                    message: `Updated ${result.rowCount} from ref`
                 });
         })
         .catch(function (err) {
@@ -3321,59 +3390,34 @@ function create_ref(req, res, next) {
     });
 }
 
-// ---------------------------------------------------------
-//  The function update data in ref
-//  URL : PUT /ref
-//  BODY: pId=...&per_pId=...&Memo=...
-// ---------------------------------------------------------
-function update_ref(req, res, next) {
-    var errStr = '';
-    if(!req.body.pId)
-        errStr += 'pId undefined! ';
-    if(!req.body.per_pId)
-        errStr += 'per_pId undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+function ref_DoDelete(req, res, next) {
+    if(req.body.params === undefined) {
+        return next( new Error('delete params not found!'));
     }
-    db.none('update ref set Memo=${Memo} where pId=${pId} and per_pId=${per_pId}',
-             req.body)
-        .then(function () {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    message: 'Updated ref'
-                });
-        })
-        .catch(function (err) {
-      return next(err);
-    });
-}
-
-// ---------------------------------------------------------
-//  The function deletes data from ref
-//  URL : DELETE /ref/
-//  BODY: pId=...&per_pId=...
-// ---------------------------------------------------------
-function remove_ref(req, res, next) {
-    var errStr = '';
-    if(!req.body.pId)
-        errStr += 'pId undefined! ';
-    if(!req.body.per_pId)
-        errStr += 'per_pId undefined! ';
-    if (errStr.length > 0)
-    {
-        next(new Error(errStr));
-        return;
+    var whereStr = '';
+    for(var parnext in req.body.params) {
+        var parstr = parnext.toString().toLowerCase();
+        if(ref_HasKeyname(parstr)) {
+            whereStr = makeWhere(whereStr);
+            whereStr += parstr + "=${" + parnext + "}";
+        } else {
+            return next(new Error('column ' + parnext + " is not key columns in ref!"));
+        }
     }
-    db.result('delete from ref where pId = $1 and per_pId = $2',req.body.pId, req.body.per_pId)
+    if(whereStr.length == 0)
+        return next(new Error('not found any keys for delete from the ref!'));
+    var sqlStr = "DELETE FROM ref " + whereStr;
+    if (app.get('env') === 'development') {
+        // console.log( sqlStr );
+        console.log(pgp.as.format(sqlStr, req.body.params));
+    }
+    db.result(sqlStr, req.body.params)
         .then(function (result) {
             /* jshint ignore:start */
             res.status(200)
                 .json({
-                status: 'success',
-                message: `Removed ${result.rowCount} ref`
+                    status: 'success',
+                    message: `Removed ${result.rowCount} from ref`
             });
             /* jshint ignore:end */
         })
@@ -3381,125 +3425,57 @@ function remove_ref(req, res, next) {
             return next(err);
     });
 }
+
+// ---------------------------------------------------------
+//  The function makes SQL for the ref from the body
+//  URL : POST /ref/
+//  BODY: 
+//  {
+//     "cmd": "select" or "insert" or "update or "delete",
+//     "row_count": ... ,
+//     "params": {
+//         "pId":"...",
+//         "per_pId":"...",
+//         "Memo":"..."
+//      }
+//  }
+// ---------------------------------------------------------
+function ref_makeQuery(req, res, next) {
+    if( req.body.cmd === undefined )
+        return next( new Error('keyword cmd not found in the body!'));
+    switch(req.body.cmd.toString().toLowerCase()) {
+    case 'select':
+        ref_DoSelect(req, res, next);
+        break;
+    case 'insert':
+        ref_DoInsert(req, res, next);
+        break;
+    case 'update':
+        ref_DoUpdate(req, res, next);
+        break;
+    case 'delete':
+        ref_DoDelete(req, res, next);
+        break;
+    default:
+        return next( new Error('cmd ' + req.body.cmd + " is unknow!"));
+    }
+}
+
 
 module.exports = {
-  getAll_docSpec: getAll_docSpec,
-  getSingle_docSpec: getSingle_docSpec,
-  getWhere_docSpec: getWhere_docSpec,
-  getPostWhere_docSpec: getPostWhere_docSpec,
-  create_docSpec: create_docSpec,
-  update_docSpec: update_docSpec,
-  remove_docSpec: remove_docSpec,
-
-  getAll_doc: getAll_doc,
-  getSingle_doc: getSingle_doc,
-  getWhere_doc: getWhere_doc,
-  getPostWhere_doc: getPostWhere_doc,
-  create_doc: create_doc,
-  update_doc: update_doc,
-  remove_doc: remove_doc,
-
-  getAll_State: getAll_State,
-  getSingle_State: getSingle_State,
-  getWhere_State: getWhere_State,
-  getPostWhere_State: getPostWhere_State,
-  create_State: create_State,
-  update_State: update_State,
-  remove_State: remove_State,
-
-  getAll_person: getAll_person,
-  getSingle_person: getSingle_person,
-  getWhere_person: getWhere_person,
-  getPostWhere_person: getPostWhere_person,
-  create_person: create_person,
-  update_person: update_person,
-  remove_person: remove_person,
-
-  getAll_photoData: getAll_photoData,
-  getSingle_photoData: getSingle_photoData,
-  getWhere_photoData: getWhere_photoData,
-  getPostWhere_photoData: getPostWhere_photoData,
-  create_photoData: create_photoData,
-  update_photoData: update_photoData,
-  remove_photoData: remove_photoData,
-
-  getAll_photoSpec: getAll_photoSpec,
-  getSingle_photoSpec: getSingle_photoSpec,
-  getWhere_photoSpec: getWhere_photoSpec,
-  getPostWhere_photoSpec: getPostWhere_photoSpec,
-  create_photoSpec: create_photoSpec,
-  update_photoSpec: update_photoSpec,
-  remove_photoSpec: remove_photoSpec,
-
-  getAll_audioDatа: getAll_audioDatа,
-  getSingle_audioDatа: getSingle_audioDatа,
-  getWhere_audioDatа: getWhere_audioDatа,
-  getPostWhere_audioDatа: getPostWhere_audioDatа,
-  create_audioDatа: create_audioDatа,
-  update_audioDatа: update_audioDatа,
-  remove_audioDatа: remove_audioDatа,
-
-  getAll_operator: getAll_operator,
-  getSingle_operator: getSingle_operator,
-  getWhere_operator: getWhere_operator,
-  getPostWhere_operator: getPostWhere_operator,
-  create_operator: create_operator,
-  update_operator: update_operator,
-  remove_operator: remove_operator,
-
-  getAll_regPoint: getAll_regPoint,
-  getSingle_regPoint: getSingle_regPoint,
-  getWhere_regPoint: getWhere_regPoint,
-  getPostWhere_regPoint: getPostWhere_regPoint,
-  create_regPoint: create_regPoint,
-  update_regPoint: update_regPoint,
-  remove_regPoint: remove_regPoint,
-
-  getAll_opRule: getAll_opRule,
-  getSingle_opRule: getSingle_opRule,
-  getWhere_opRule: getWhere_opRule,
-  getPostWhere_opRule: getPostWhere_opRule,
-  create_opRule: create_opRule,
-  update_opRule: update_opRule,
-  remove_opRule: remove_opRule,
-
-  getAll_Contact: getAll_Contact,
-  getSingle_Contact: getSingle_Contact,
-  getWhere_Contact: getWhere_Contact,
-  getPostWhere_Contact: getPostWhere_Contact,
-  create_Contact: create_Contact,
-  update_Contact: update_Contact,
-  remove_Contact: remove_Contact,
-
-  getAll_Agent: getAll_Agent,
-  getSingle_Agent: getSingle_Agent,
-  getWhere_Agent: getWhere_Agent,
-  getPostWhere_Agent: getPostWhere_Agent,
-  create_Agent: create_Agent,
-  update_Agent: update_Agent,
-  remove_Agent: remove_Agent,
-
-  getAll_access: getAll_access,
-  getSingle_access: getSingle_access,
-  getWhere_access: getWhere_access,
-  getPostWhere_access: getPostWhere_access,
-  create_access: create_access,
-  update_access: update_access,
-  remove_access: remove_access,
-
-  getAll_docImage: getAll_docImage,
-  getSingle_docImage: getSingle_docImage,
-  getWhere_docImage: getWhere_docImage,
-  getPostWhere_docImage: getPostWhere_docImage,
-  create_docImage: create_docImage,
-  update_docImage: update_docImage,
-  remove_docImage: remove_docImage,
-
-  getAll_ref: getAll_ref,
-  getSingle_ref: getSingle_ref,
-  getWhere_ref: getWhere_ref,
-  getPostWhere_ref: getPostWhere_ref,
-  create_ref: create_ref,
-  update_ref: update_ref,
-  remove_ref: remove_ref
+   docSpec_makeQuery: docSpec_makeQuery,
+   doc_makeQuery: doc_makeQuery,
+   State_makeQuery: State_makeQuery,
+   person_makeQuery: person_makeQuery,
+   photoData_makeQuery: photoData_makeQuery,
+   photoSpec_makeQuery: photoSpec_makeQuery,
+   audioDatа_makeQuery: audioDatа_makeQuery,
+   operator_makeQuery: operator_makeQuery,
+   regPoint_makeQuery: regPoint_makeQuery,
+   opRule_makeQuery: opRule_makeQuery,
+   Contact_makeQuery: Contact_makeQuery,
+   Agent_makeQuery: Agent_makeQuery,
+   access_makeQuery: access_makeQuery,
+   docImage_makeQuery: docImage_makeQuery,
+   ref_makeQuery: ref_makeQuery
 };

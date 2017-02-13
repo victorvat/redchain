@@ -8,9 +8,9 @@ const passport = require('passport');
 const Strategy = require('passport-local');
 const authUser = require('./models/authUser');
 const authRouter = require('./routes/authRouter');
-
-// const extRouter= require('./routes/extRouter');
+const extRouter= require('./routes/extRouter');
 const apiRouter = require('./routes/index');
+var verifyUser = require('./verifyUser');
 
 var app = express();
 
@@ -41,6 +41,9 @@ app.use(express.static(path.join(__dirname, 'public', 'stylesheets')));
 app.use(express.static(path.join(__dirname, 'public', 'javascripts')));
 app.use(express.static(path.join(__dirname, 'build')));
 
+//////////////////////////
+// Passport 
+//////////////////////////
 app.use(passport.initialize());
 passport.use(new Strategy(
     function(username, password, done) {
@@ -61,11 +64,18 @@ passport.deserializeUser(
     }
 );
 
-//const jsonParser = bodyParser.json();
+app.get('/d/*', (req, res) => {
+    console.log('HTML:', req.path);
+    res.sendFile(path.resolve(__dirname, 'public', 'index.html'));
+});
+
+/////////////////////////////////////////////////////////////////
+// You shouldn't use bodyParser.json, because it was already used
+// const jsonParser = bodyParser.json(); // Already at line 37
 // app.use('/ext', jsonParser, extRouter);
-
-verifyUser = require('./verifyUser');
-
+// app.use('/api', jsonParser, apiRouter); 
+/////////////////////////////////////////////////////////////////
+app.use('/ext', extRouter);
 app.use('/api', verifyUser.verifyOrdinaryUser, apiRouter,
 	function (req, res, next) {
 	    // console.log('res is ' + res);

@@ -100,12 +100,12 @@ function docSpec_DoSelect(req, res, next) {
     }
     db.any(sqlStr, req.body.params)
         .then(function (data) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     data: data,
                     message: 'Retrieved from docspec'
-            });
+            };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -138,12 +138,12 @@ function docSpec_DoInsert(req, res, next) {
     }
     db.one(sqlStr, req.body.params)
         .then(function (data) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     data: data,
                     message: 'Inserted into docspec'
-                });
+                };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -179,11 +179,11 @@ function docSpec_DoUpdate(req, res, next) {
     }
     db.result(sqlStr, req.body.params)
         .then(function (result) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     message: `Updated ${result.rowCount} from docspec`
-                });
+                };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -214,12 +214,12 @@ function docSpec_DoDelete(req, res, next) {
     db.result(sqlStr, req.body.params)
         .then(function (result) {
             /* jshint ignore:start */
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     message: `Removed ${result.rowCount} from docspec`
-            });
+            };
             /* jshint ignore:end */
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -354,12 +354,12 @@ function doc_DoSelect(req, res, next) {
     }
     db.any(sqlStr, req.body.params)
         .then(function (data) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     data: data,
                     message: 'Retrieved from doc'
-            });
+            };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -392,12 +392,12 @@ function doc_DoInsert(req, res, next) {
     }
     db.one(sqlStr, req.body.params)
         .then(function (data) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     data: data,
                     message: 'Inserted into doc'
-                });
+                };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -433,11 +433,11 @@ function doc_DoUpdate(req, res, next) {
     }
     db.result(sqlStr, req.body.params)
         .then(function (result) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     message: `Updated ${result.rowCount} from doc`
-                });
+                };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -468,12 +468,12 @@ function doc_DoDelete(req, res, next) {
     db.result(sqlStr, req.body.params)
         .then(function (result) {
             /* jshint ignore:start */
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     message: `Removed ${result.rowCount} from doc`
-            });
+            };
             /* jshint ignore:end */
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -578,12 +578,12 @@ function State_DoSelect(req, res, next) {
     }
     db.any(sqlStr, req.body.params)
         .then(function (data) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     data: data,
                     message: 'Retrieved from state'
-            });
+            };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -616,12 +616,12 @@ function State_DoInsert(req, res, next) {
     }
     db.one(sqlStr, req.body.params)
         .then(function (data) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     data: data,
                     message: 'Inserted into state'
-                });
+                };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -657,11 +657,11 @@ function State_DoUpdate(req, res, next) {
     }
     db.result(sqlStr, req.body.params)
         .then(function (result) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     message: `Updated ${result.rowCount} from state`
-                });
+                };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -692,12 +692,12 @@ function State_DoDelete(req, res, next) {
     db.result(sqlStr, req.body.params)
         .then(function (result) {
             /* jshint ignore:start */
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     message: `Removed ${result.rowCount} from state`
-            });
+            };
             /* jshint ignore:end */
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -820,12 +820,12 @@ function person_DoSelect(req, res, next) {
     }
     db.any(sqlStr, req.body.params)
         .then(function (data) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     data: data,
                     message: 'Retrieved from person'
-            });
+            };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -858,11 +858,11 @@ function person_DoInsert(req, res, next) {
     }
     db.none(sqlStr, req.body.params)
         .then(function () {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     message: 'Inserted into person'
-                });
+                };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -898,11 +898,11 @@ function person_DoUpdate(req, res, next) {
     }
     db.result(sqlStr, req.body.params)
         .then(function (result) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     message: `Updated ${result.rowCount} from person`
-                });
+                };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -933,12 +933,12 @@ function person_DoDelete(req, res, next) {
     db.result(sqlStr, req.body.params)
         .then(function (result) {
             /* jshint ignore:start */
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     message: `Removed ${result.rowCount} from person`
-            });
+            };
             /* jshint ignore:end */
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -1041,12 +1041,12 @@ function photoData_DoSelect(req, res, next) {
     }
     db.any(sqlStr, req.body.params)
         .then(function (data) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     data: data,
                     message: 'Retrieved from photodata'
-            });
+            };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -1079,11 +1079,11 @@ function photoData_DoInsert(req, res, next) {
     }
     db.none(sqlStr, req.body.params)
         .then(function () {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     message: 'Inserted into photodata'
-                });
+                };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -1119,11 +1119,11 @@ function photoData_DoUpdate(req, res, next) {
     }
     db.result(sqlStr, req.body.params)
         .then(function (result) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     message: `Updated ${result.rowCount} from photodata`
-                });
+                };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -1154,12 +1154,12 @@ function photoData_DoDelete(req, res, next) {
     db.result(sqlStr, req.body.params)
         .then(function (result) {
             /* jshint ignore:start */
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     message: `Removed ${result.rowCount} from photodata`
-            });
+            };
             /* jshint ignore:end */
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -1252,12 +1252,12 @@ function photoSpec_DoSelect(req, res, next) {
     }
     db.any(sqlStr, req.body.params)
         .then(function (data) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     data: data,
                     message: 'Retrieved from photospec'
-            });
+            };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -1290,12 +1290,12 @@ function photoSpec_DoInsert(req, res, next) {
     }
     db.one(sqlStr, req.body.params)
         .then(function (data) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     data: data,
                     message: 'Inserted into photospec'
-                });
+                };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -1331,11 +1331,11 @@ function photoSpec_DoUpdate(req, res, next) {
     }
     db.result(sqlStr, req.body.params)
         .then(function (result) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     message: `Updated ${result.rowCount} from photospec`
-                });
+                };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -1366,12 +1366,12 @@ function photoSpec_DoDelete(req, res, next) {
     db.result(sqlStr, req.body.params)
         .then(function (result) {
             /* jshint ignore:start */
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     message: `Removed ${result.rowCount} from photospec`
-            });
+            };
             /* jshint ignore:end */
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -1475,12 +1475,12 @@ function audioDatа_DoSelect(req, res, next) {
     }
     db.any(sqlStr, req.body.params)
         .then(function (data) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     data: data,
                     message: 'Retrieved from audiodatа'
-            });
+            };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -1513,11 +1513,11 @@ function audioDatа_DoInsert(req, res, next) {
     }
     db.none(sqlStr, req.body.params)
         .then(function () {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     message: 'Inserted into audiodatа'
-                });
+                };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -1553,11 +1553,11 @@ function audioDatа_DoUpdate(req, res, next) {
     }
     db.result(sqlStr, req.body.params)
         .then(function (result) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     message: `Updated ${result.rowCount} from audiodatа`
-                });
+                };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -1588,12 +1588,12 @@ function audioDatа_DoDelete(req, res, next) {
     db.result(sqlStr, req.body.params)
         .then(function (result) {
             /* jshint ignore:start */
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     message: `Removed ${result.rowCount} from audiodatа`
-            });
+            };
             /* jshint ignore:end */
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -1723,12 +1723,12 @@ function operator_DoSelect(req, res, next) {
     }
     db.any(sqlStr, req.body.params)
         .then(function (data) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     data: data,
                     message: 'Retrieved from operator'
-            });
+            };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -1761,12 +1761,12 @@ function operator_DoInsert(req, res, next) {
     }
     db.one(sqlStr, req.body.params)
         .then(function (data) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     data: data,
                     message: 'Inserted into operator'
-                });
+                };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -1802,11 +1802,11 @@ function operator_DoUpdate(req, res, next) {
     }
     db.result(sqlStr, req.body.params)
         .then(function (result) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     message: `Updated ${result.rowCount} from operator`
-                });
+                };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -1837,12 +1837,12 @@ function operator_DoDelete(req, res, next) {
     db.result(sqlStr, req.body.params)
         .then(function (result) {
             /* jshint ignore:start */
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     message: `Removed ${result.rowCount} from operator`
-            });
+            };
             /* jshint ignore:end */
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -1964,12 +1964,12 @@ function regPoint_DoSelect(req, res, next) {
     }
     db.any(sqlStr, req.body.params)
         .then(function (data) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     data: data,
                     message: 'Retrieved from regpoint'
-            });
+            };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -2002,12 +2002,12 @@ function regPoint_DoInsert(req, res, next) {
     }
     db.one(sqlStr, req.body.params)
         .then(function (data) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     data: data,
                     message: 'Inserted into regpoint'
-                });
+                };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -2043,11 +2043,11 @@ function regPoint_DoUpdate(req, res, next) {
     }
     db.result(sqlStr, req.body.params)
         .then(function (result) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     message: `Updated ${result.rowCount} from regpoint`
-                });
+                };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -2078,12 +2078,12 @@ function regPoint_DoDelete(req, res, next) {
     db.result(sqlStr, req.body.params)
         .then(function (result) {
             /* jshint ignore:start */
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     message: `Removed ${result.rowCount} from regpoint`
-            });
+            };
             /* jshint ignore:end */
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -2185,12 +2185,12 @@ function opRule_DoSelect(req, res, next) {
     }
     db.any(sqlStr, req.body.params)
         .then(function (data) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     data: data,
                     message: 'Retrieved from oprule'
-            });
+            };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -2223,12 +2223,12 @@ function opRule_DoInsert(req, res, next) {
     }
     db.one(sqlStr, req.body.params)
         .then(function (data) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     data: data,
                     message: 'Inserted into oprule'
-                });
+                };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -2264,11 +2264,11 @@ function opRule_DoUpdate(req, res, next) {
     }
     db.result(sqlStr, req.body.params)
         .then(function (result) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     message: `Updated ${result.rowCount} from oprule`
-                });
+                };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -2299,12 +2299,12 @@ function opRule_DoDelete(req, res, next) {
     db.result(sqlStr, req.body.params)
         .then(function (result) {
             /* jshint ignore:start */
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     message: `Removed ${result.rowCount} from oprule`
-            });
+            };
             /* jshint ignore:end */
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -2427,12 +2427,12 @@ function Contact_DoSelect(req, res, next) {
     }
     db.any(sqlStr, req.body.params)
         .then(function (data) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     data: data,
                     message: 'Retrieved from contact'
-            });
+            };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -2465,12 +2465,12 @@ function Contact_DoInsert(req, res, next) {
     }
     db.one(sqlStr, req.body.params)
         .then(function (data) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     data: data,
                     message: 'Inserted into contact'
-                });
+                };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -2506,11 +2506,11 @@ function Contact_DoUpdate(req, res, next) {
     }
     db.result(sqlStr, req.body.params)
         .then(function (result) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     message: `Updated ${result.rowCount} from contact`
-                });
+                };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -2541,12 +2541,12 @@ function Contact_DoDelete(req, res, next) {
     db.result(sqlStr, req.body.params)
         .then(function (result) {
             /* jshint ignore:start */
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     message: `Removed ${result.rowCount} from contact`
-            });
+            };
             /* jshint ignore:end */
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -2649,12 +2649,12 @@ function Agent_DoSelect(req, res, next) {
     }
     db.any(sqlStr, req.body.params)
         .then(function (data) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     data: data,
                     message: 'Retrieved from agent'
-            });
+            };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -2687,12 +2687,12 @@ function Agent_DoInsert(req, res, next) {
     }
     db.one(sqlStr, req.body.params)
         .then(function (data) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     data: data,
                     message: 'Inserted into agent'
-                });
+                };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -2728,11 +2728,11 @@ function Agent_DoUpdate(req, res, next) {
     }
     db.result(sqlStr, req.body.params)
         .then(function (result) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     message: `Updated ${result.rowCount} from agent`
-                });
+                };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -2763,12 +2763,12 @@ function Agent_DoDelete(req, res, next) {
     db.result(sqlStr, req.body.params)
         .then(function (result) {
             /* jshint ignore:start */
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     message: `Removed ${result.rowCount} from agent`
-            });
+            };
             /* jshint ignore:end */
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -2867,12 +2867,12 @@ function access_DoSelect(req, res, next) {
     }
     db.any(sqlStr, req.body.params)
         .then(function (data) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     data: data,
                     message: 'Retrieved from access'
-            });
+            };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -2905,11 +2905,11 @@ function access_DoInsert(req, res, next) {
     }
     db.none(sqlStr, req.body.params)
         .then(function () {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     message: 'Inserted into access'
-                });
+                };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -2945,11 +2945,11 @@ function access_DoUpdate(req, res, next) {
     }
     db.result(sqlStr, req.body.params)
         .then(function (result) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     message: `Updated ${result.rowCount} from access`
-                });
+                };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -2980,12 +2980,12 @@ function access_DoDelete(req, res, next) {
     db.result(sqlStr, req.body.params)
         .then(function (result) {
             /* jshint ignore:start */
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     message: `Removed ${result.rowCount} from access`
-            });
+            };
             /* jshint ignore:end */
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -3084,12 +3084,12 @@ function docImage_DoSelect(req, res, next) {
     }
     db.any(sqlStr, req.body.params)
         .then(function (data) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     data: data,
                     message: 'Retrieved from docimage'
-            });
+            };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -3122,11 +3122,11 @@ function docImage_DoInsert(req, res, next) {
     }
     db.none(sqlStr, req.body.params)
         .then(function () {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     message: 'Inserted into docimage'
-                });
+                };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -3162,11 +3162,11 @@ function docImage_DoUpdate(req, res, next) {
     }
     db.result(sqlStr, req.body.params)
         .then(function (result) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     message: `Updated ${result.rowCount} from docimage`
-                });
+                };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -3197,12 +3197,12 @@ function docImage_DoDelete(req, res, next) {
     db.result(sqlStr, req.body.params)
         .then(function (result) {
             /* jshint ignore:start */
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     message: `Removed ${result.rowCount} from docimage`
-            });
+            };
             /* jshint ignore:end */
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -3301,12 +3301,12 @@ function ref_DoSelect(req, res, next) {
     }
     db.any(sqlStr, req.body.params)
         .then(function (data) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     data: data,
                     message: 'Retrieved from ref'
-            });
+            };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -3339,11 +3339,11 @@ function ref_DoInsert(req, res, next) {
     }
     db.none(sqlStr, req.body.params)
         .then(function () {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     message: 'Inserted into ref'
-                });
+                };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -3379,11 +3379,11 @@ function ref_DoUpdate(req, res, next) {
     }
     db.result(sqlStr, req.body.params)
         .then(function (result) {
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     message: `Updated ${result.rowCount} from ref`
-                });
+                };
+            return next();
         })
         .catch(function (err) {
             return next(err);
@@ -3414,12 +3414,12 @@ function ref_DoDelete(req, res, next) {
     db.result(sqlStr, req.body.params)
         .then(function (result) {
             /* jshint ignore:start */
-            res.status(200)
-                .json({
+            req.dbAnswer = {
                     status: 'success',
                     message: `Removed ${result.rowCount} from ref`
-            });
+            };
             /* jshint ignore:end */
+            return next();
         })
         .catch(function (err) {
             return next(err);

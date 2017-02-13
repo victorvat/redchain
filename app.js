@@ -30,6 +30,11 @@ app.use(express.static(path.join(__dirname, 'public', 'stylesheets')));
 app.use(express.static(path.join(__dirname, 'public', 'javascripts')));
 app.use(express.static(path.join(__dirname, 'build')));
 
+app.get('/d/*', (req, res) => {
+    console.log('HTML:', req.path);
+    res.sendFile(path.resolve(__dirname, 'public', 'index.html'));
+});
+
 const jsonParser = bodyParser.json();
 app.use('/ext', jsonParser, extRouter);
 app.use('/api', jsonParser, apiRouter); 

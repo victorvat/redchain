@@ -7,7 +7,7 @@ var config = ini.parse(fs.readFileSync('./config.ini', 'utf-8'))
 var secretKey = config.security.secretKey;
 var configExpiresIn = parseInt(config.security.expiresIn);
 
-console.log('configExpiresIn is ' + configExpiresIn);
+// console.log('configExpiresIn is ' + configExpiresIn);
 
 exports.getToken = function (user) {
     // console.log('getToken has user = ' + user);
@@ -70,9 +70,25 @@ exports.verifyOrdinaryUser = function (req, res, next) {
             } else {
                 // if everything is good, save to request for use in other routes
 		// console.log(decoded);
-		console.log('User ' + decoded.username + ' is authenticated');
-                req.decoded = decoded;
-                next();
+		///////////////////////////////////////////////////////
+		// We should to ensure that user exists in database !!
+		///////////////////////////////////////////////////////
+		var userExists = true;
+		authUser.deserializeUser(
+		    decoded.id,
+		    function(err, user){
+			if(err)
+			{
+			    userExists = false;
+			    next(err);
+			}
+		    });
+		if(userExists)
+		{
+		    console.log('User ' + decoded.username + ' is authenticated');
+                    req.decoded = decoded;
+                    next();
+		}
             }
         });
     } else {

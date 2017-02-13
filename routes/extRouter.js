@@ -13,7 +13,8 @@ extRouter.post('/person_find',
         console.log('person_find', req.body);
         next();
     },
-    dbGate.getAll_person
+	       // dbGate.getAll_person
+	       dbGate.person_makeQuery
 );
 
 extRouter.get('/person_all',

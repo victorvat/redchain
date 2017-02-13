@@ -2,7 +2,7 @@ var express = require('express');
 var router = express.Router();
 var passport = require('passport');
 var authUser = require('../models/authUser');
-var verifyUser    = require('../verifyUser');
+var verifyUser  = require('../server/verifyUser');
 
 /* GET users listing. */
 // router.get('/', function(req, res, next) {

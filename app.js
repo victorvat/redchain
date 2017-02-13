@@ -10,7 +10,7 @@ const authUser = require('./models/authUser');
 const authRouter = require('./routes/authRouter');
 const extRouter= require('./routes/extRouter');
 const apiRouter = require('./routes/index');
-var verifyUser = require('./verifyUser');
+var verifyUser = require('./server/verifyUser');
 
 var app = express();
 
@@ -23,8 +23,8 @@ if (app.get('env') === 'development') {
 }
 
 // view engine setup
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'jade');
+//app.set('views', path.join(__dirname, 'views'));
+//app.set('view engine', 'jade');
 // Configure view engine to render EJS templates.
 // app.set('views', __dirname + '/views');
 // app.set('view engine', 'ejs');
@@ -37,8 +37,8 @@ app.use(cookieParser());
 app.use(bodyParser.json());
 
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.static(path.join(__dirname, 'public', 'stylesheets')));
-app.use(express.static(path.join(__dirname, 'public', 'javascripts')));
+//app.use(express.static(path.join(__dirname, 'public', 'stylesheets')));
+//app.use(express.static(path.join(__dirname, 'public', 'javascripts')));
 app.use(express.static(path.join(__dirname, 'build')));
 
 //////////////////////////

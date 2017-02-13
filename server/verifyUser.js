@@ -1,9 +1,7 @@
-var authUser = require('./models/authUser');
+var authUser = require('../models/authUser');
 var jwt = require('jsonwebtoken'); // used to create, sign, and verify tokens
 
-var fs = require('fs');
-var ini = require('ini');
-var config = ini.parse(fs.readFileSync('./config.ini', 'utf-8'))
+var config = require('./config');
 var secretKey = config.security.secretKey;
 var configExpiresIn = parseInt(config.security.expiresIn);
 

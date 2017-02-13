@@ -1,12 +1,12 @@
 const express = require('express');
 const extRouter = new express.Router();
 
-var dbGate = require('../queries');
+//var dbGate = require('../queries');
 
-extRouter.use((req, res, next) => {
-    console.log('API_ROUTER:', req.path);
-    next();
-});
+// extRouter.use((req, res, next) => {
+//     console.log('API_ROUTER:', req.path);
+//     next();
+// });
 
 // extRouter.post('/person_find', 
 //     (req, res, next) => {
@@ -23,10 +23,10 @@ extRouter.use((req, res, next) => {
 //     }
 // );
 
-extRouter.post('/login', 
-    (req, res, next) => {
-        console.log('login')
-    }
-);
+// extRouter.post('/login', 
+//     (req, res, next) => {
+//         console.log('login')
+//     }
+// );
 
 module.exports = extRouter;

@@ -1,7 +1,7 @@
 var express = require('express');
 var router = express.Router();
 
-var db = require('../queries');
+var db = require('../server/queries');
 
 router.post('/docSpec/', db.docSpec_makeQuery);
 router.post('/doc/', db.doc_makeQuery);

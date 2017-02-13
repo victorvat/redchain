@@ -1,6 +1,7 @@
 var promise = require('bluebird');
 var express = require('express');
 var app = express();
+var config = require('./config');
 
 var options = {
   // Initialization Options
@@ -8,11 +9,7 @@ var options = {
 };
 
 var pgp = require('pg-promise')(options);
-var fs = require('fs');
-var ini = require('ini');
-var config = ini.parse(fs.readFileSync('./config.ini', 'utf-8'))
-var connectionString = config.database.connectionString;
-var db = pgp(connectionString);
+var db = pgp(config.database.connectionString);
 
 function makeWhere(whereStr) {
     if(whereStr === undefined || whereStr.length == 0)

@@ -34,9 +34,13 @@ function post(url, data)
     xhr.responseType = 'json';
 
     xhr.addEventListener('load', () => {
-      xhr.status === 200
-        ? success(xhr.response)
-        : fail(xhr.statusText);
+      if(xhr.status === 200) {
+        success(xhr.response);
+      } else if(xhr.status === 500) { 
+        fail(xhr.response.message); 
+      } else {
+        fail(xhr.statusText);
+      }
     });
 
     xhr.addEventListener('error', () => {

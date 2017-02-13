@@ -3,14 +3,6 @@ import { FormControl } from 'react-bootstrap';
 import gate from '../lib/gate';
 
 
-const OperatorLookupRow = ({
-  value
-}) => (
-  <option value={value.coper}>
-    {value.stuff}
-  </option>  
-);
-
 class OperatorLookup extends React.Component {
   constructor(props) {
     super(props);
@@ -37,19 +29,28 @@ class OperatorLookup extends React.Component {
     })  
   }
 
+  onChangeValue(event) {
+     if (event.target.value === "#") {
+       event.target.value = undefined;
+     }
+     this.props.onChange(event);
+  }
+
   render() {
     const dataList = this.state.dataList;
 
     return (
         <FormControl componentClass="select" 
-          onChange={this.props.onChange}
-          defaultValue={this.props.value}
+          onChange={this.onChangeValue.bind(this)}
+          value={this.props.value || "#"}
         >
           { (this.props.mandatory) || (
-             <option key={-1} value=""></option>
+             <option key={-1} value="#">-----</option>
           )}          
           { dataList.map((row,index) => (
-              <StateLookupRow key={row.coper} value={row} />
+              <option key={row.coper} value={row.coper}>
+                {row.stuff}
+              </option>  
            ))}
         </FormControl>
     )

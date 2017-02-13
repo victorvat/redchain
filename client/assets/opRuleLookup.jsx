@@ -3,14 +3,6 @@ import { FormControl } from 'react-bootstrap';
 import gate from '../lib/gate';
 
 
-const OpRuleLookupRow = ({
-  value
-}) => (
-  <option value={value.crule}>
-    {value.rule}
-  </option>  
-);
-
 class OpRuleLookup extends React.Component {
   constructor(props) {
     super(props);
@@ -37,19 +29,28 @@ class OpRuleLookup extends React.Component {
     })  
   }
 
+  onChangeValue(event) {
+     if (event.target.value === "#") {
+       event.target.value = undefined;
+     }
+     this.props.onChange(event);
+  }
+
   render() {
     const dataList = this.state.dataList;
 
     return (
         <FormControl componentClass="select" 
-          onChange={this.props.onChange}
-          defaultValue={this.props.value}
+          onChange={this.onChangeValue.bind(this)}
+          value={this.props.value || "#"}
         >
           { (this.props.mandatory) || (
-             <option key={-1} value=""></option>
+             <option key={-1} value="#">-----</option>
           )}          
           { dataList.map((row,index) => (
-              <StateLookupRow key={row.crule} value={row} />
+              <option key={row.crule} value={row.crule}>
+                {row.rule}
+              </option>  
            ))}
         </FormControl>
     )

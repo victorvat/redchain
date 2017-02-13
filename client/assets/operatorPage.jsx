@@ -78,7 +78,7 @@ const FrmFind = ({
     </FormGroup>
 
     <FormGroup>
-      <Col smOffset={2} sm={10}>
+      <Col smOffset={2} sm={2}>
         <Button type="submit">
             Find
         </Button>
@@ -154,7 +154,6 @@ class FindPage extends React.Component {
     }
     gate.post('/api/operator', postData)
     .then( response => {
-      console.log('got', response.data);
       const dataList=response.data;
       this.setState({
         errors: {},
@@ -175,21 +174,21 @@ class FindPage extends React.Component {
   onFilterChange(event, fieldKey) {
     const newData = { [fieldKey]: event.target.value };
     var filter = Object.assign({}, this.state.filter, newData);
-      this.setState({
-        filter, 
-        dataList: []
-      });
+    this.setState({
+      filter, 
+      dataList: []
+    });
   }
 
   onShowPress(event) {
-      this.setState({
-        isOpened: true 
-      });
+    this.setState({
+      isOpened: true 
+    });
   }
 
   onRowPress(event, key) {
     event.preventDefault();
-    browserHistory.push('/d/person/'+key);
+    browserHistory.push('/d/operator/edit/'+key);
   }
   
   render() {
@@ -297,11 +296,16 @@ const FrmEdit = ({
     </FormGroup>
 
     <FormGroup>
-      <Col smOffset={2} sm={10}>
+      <Col smOffset={2} sm={2}>
         <Button type="submit">
             Save
         </Button>
       </Col>
+      <Col smOffset={6} sm={2}>
+        <Button href="/d/operator/find">
+            Cancel
+        </Button>
+      </Col>      
     </FormGroup>
   </Form>
 );
@@ -419,9 +423,7 @@ class CreatePage extends React.Component {
     .then( response => {
       console.log('got', response.meesage);
       alert(response.meesage);      
-      this.setState({
-        writeReady: false,
-      })
+      browserHistory.push('/d/operator/find');
     })
     .catch( reson => {
       alert('API_ERROR: '+reson);      

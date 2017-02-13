@@ -32,25 +32,25 @@ const nav_content = (
         </NavDropdown>
         <NavDropdown eventKey={2} title="Create" id="nav-dropdown-2">
 
-          <LinkContainer to="/d/doc/crate" activeHref="active">
+          <LinkContainer to="/d/doc/create" activeHref="active">
             <NavItem href="#">Документ</NavItem>
           </LinkContainer>
-          <LinkContainer to="/d/person/crate" activeHref="active">
+          <LinkContainer to="/d/person/create" activeHref="active">
             <NavItem href="#">Персона</NavItem>
           </LinkContainer>
-          <LinkContainer to="/d/agent/crate" activeHref="active">
+          <LinkContainer to="/d/agent/create" activeHref="active">
             <NavItem href="#">Агент</NavItem>
           </LinkContainer>
-          <LinkContainer to="/d/state/crate" activeHref="active">
+          <LinkContainer to="/d/state/create" activeHref="active">
             <NavItem href="#">Состояние</NavItem>
           </LinkContainer>
-          <LinkContainer to="/d/contact/crate" activeHref="active">
+          <LinkContainer to="/d/contact/create" activeHref="active">
             <NavItem href="#">Contact</NavItem>
           </LinkContainer>
-          <LinkContainer to="/d/docspec/crate" activeHref="active">
+          <LinkContainer to="/d/docspec/create" activeHref="active">
             <NavItem href="#">DocSpec</NavItem>
           </LinkContainer>
-          <LinkContainer to="/d/oprule/crate" activeHref="active">
+          <LinkContainer to="/d/oprule/create" activeHref="active">
             <NavItem href="#">OpRule</NavItem>
           </LinkContainer>
         </NavDropdown>

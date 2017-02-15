@@ -15,6 +15,15 @@ Steps to make redchain working:
 
    npm install
 
+2.2 Configure project
+
+----- config.ini exaple -----
+[database]
+connectionString = postgres://postgres@localhost/redchain
+[security]
+secretKey = 12345
+expiresIn = 3600
+
 3. Test the project (Control-C to cancel)
 
    npm start

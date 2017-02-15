@@ -1,0 +1,62 @@
+; this comment is being ignored
+; scope = global
+
+
+; -----------------------------------------------------
+; common section
+; -----------------------------------------------------
+[common]
+
+; -----------------------------------------------------
+; port is used for HTTP requests
+; default is 3000
+; -----------------------------------------------------
+port = 3000
+
+; -----------------------------------------------------
+; database section
+; -----------------------------------------------------
+[database]
+
+; -----------------------------------------------------
+; connectionString is used for connect to PostgresSQL
+; dbname is redchain usualy 
+; -----------------------------------------------------
+connectionString = postgres://username:password@hostname:port/dbname
+
+; -----------------------------------------------------
+; security section
+; -----------------------------------------------------
+[security]
+
+; -----------------------------------------------------
+; secport is used for HTTPS requests
+; default is 3443
+; -----------------------------------------------------
+secport = 3443
+
+; -----------------------------------------------------
+; privatekey_file is used for keeping private key
+; default is $PROJECTDIR/bin/private.key
+; -----------------------------------------------------
+privatekey_file = bin/private.key
+
+; -----------------------------------------------------
+; certificate_file is used for keeping the certificate
+; default is $PROJECTDIR/bin/certificate.pem
+; -----------------------------------------------------
+certificate_file = bin/certificate.pem
+
+; -----------------------------------------------------
+; secretKey is used for generating tokens via jsonwbebtokenpackage
+; secretKey can be any string You want
+; default is 12345-67890-09876-54321
+; -----------------------------------------------------
+secretKey = 12345-67890-09876-54321
+
+; -----------------------------------------------------
+; expiresIn is a number of seconds
+; after this interval the token will be invalid
+; default is 600
+; -----------------------------------------------------
+expiresIn = 600

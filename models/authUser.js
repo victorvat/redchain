@@ -1,6 +1,6 @@
 var records = [
     { id: 1, username: 'mars', password: 'secret', displayName: 'Mars Garai', emails: [ { value: 'mars@redchain.com' } ] }
-  , { id: 2, username: 'vik', password: 'secret', displayName: 'Viktor Ilin', emails: [ { value: 'vik@redchain.com' } ] }
+  , { id: 2, username: 'vic', password: '0', displayName: 'Viktor Ilin', emails: [ { value: 'vic@redchain.com' } ] }
   , { id: 3, username: 'vvg', password: '666', displayName: 'Victor Vat', emails: [ { value: 'vvg@redchain.com' } ] }
   // , { id: 4, username: 'test', password: 'qwert1', displayName: 'Test User', emails: [ { value: 'test@redchain.com' } ] }
 ];
@@ -28,6 +28,7 @@ function findByUsername(username, cb) {
 }
 
 function authenticate(username, password, cb) {
+    console.log('AuthUser.authenticate', username, password);
     // database dummy - find user and verify password
     // console.log('authenticate will call findByUsername');
     findByUsername(username, function(err, user) {

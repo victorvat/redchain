@@ -16,18 +16,20 @@ var app = express();
 
 // Secure traffic only
 app.all('*', function(req, res, next){
+    if (req.hostname === "localhost") {
+	    return next();
+    };
     console.log('req start: ',req.secure, req.hostname, req.url, app.get('port'));
     if (req.secure) {
-	return next();
+	    return next();
     };
-    
     res.redirect('https://'+req.hostname+':'+app.get('secPort')+req.url);
 });
 
 // console debug trace
 if (app.get('env') === 'development') {
     app.use((req, res, next) => {
-	console.log('URL:', req.path);
+	console.log('URL:', req.method, req.path);
 	next();
     });
 }
@@ -47,8 +49,6 @@ app.use(cookieParser());
 app.use(bodyParser.json());
 
 app.use(express.static(path.join(__dirname, 'public')));
-//app.use(express.static(path.join(__dirname, 'public', 'stylesheets')));
-//app.use(express.static(path.join(__dirname, 'public', 'javascripts')));
 app.use(express.static(path.join(__dirname, 'build')));
 
 //////////////////////////
@@ -57,27 +57,34 @@ app.use(express.static(path.join(__dirname, 'build')));
 app.use(passport.initialize());
 passport.use(new Strategy(
     function(username, password, done) {
-	// console.log('passport will call authUser.authenticate');
-	authUser.authenticate(username, password, done);
+	  console.log('passport will call authUser.authenticate');
+	  authUser.authenticate(username, password, done);
     }
 ));
 passport.serializeUser(
     function(user, cb) {
-	// console.log('passport will call authUser.serializeUser');
-	authUser.serializeUser(user, cb);
+	  console.log('passport will call authUser.serializeUser', user);
+	  authUser.serializeUser(user, cb);
     }
 );
 passport.deserializeUser(
     function(id, cb) {
-	// console.log('passport will call deserializeUser');
-	authUser.deserializeUser(id, cb);
+	  console.log('passport will call deserializeUser');
+	  authUser.deserializeUser(id, cb);
     }
 );
 
+app.get('/login*', (req, res) => {
+	console.log('===/login*', req.path);
+    res.sendFile(path.resolve(__dirname, 'public', 'login.html'));
+});
+
 app.get('/d/*', (req, res) => {
-    console.log('HTML:', req.path);
+	console.log('===/d/*', req.path);
     res.sendFile(path.resolve(__dirname, 'public', 'index.html'));
 });
+
+app.use('/users', authRouter);
 
 /////////////////////////////////////////////////////////////////
 // You shouldn't use bodyParser.json, because it was already used
@@ -86,12 +93,14 @@ app.get('/d/*', (req, res) => {
 // app.use('/api', jsonParser, apiRouter); 
 /////////////////////////////////////////////////////////////////
 app.use('/ext', extRouter);
-app.use('/api', verifyUser.verifyOrdinaryUser, apiRouter,
+app.use('/api', 
+	verifyUser.verifyOrdinaryUser,
+	apiRouter,
 	function (req, res, next) {
-	    // console.log('res is ' + res);
-	    // console.log('decoded is ' + req.decoded);
-	    // console.log('decoded.id is ' + req.decoded.id);
-	    // console.log('decoded.username is ' + req.decoded.username);
+	    console.log('res is ' + res);
+	    console.log('decoded is ' + req.decoded);
+	    console.log('decoded.id is ' + req.decoded.id);
+	    console.log('decoded.username is ' + req.decoded.username);
 	    authUser.deserializeUser(
 		req.decoded.id,
 		function(err, user){
@@ -101,14 +110,9 @@ app.use('/api', verifyUser.verifyOrdinaryUser, apiRouter,
 		}
 	    );
 	    res.status(200).json(req.dbAnswer);
-	});
-app.use('/users', authRouter);
+	}
+);
 	
-// app.get('*', (req, res) => {
-//     console.log('HTML:', req.path);
-//     res.sendFile(path.resolve(__dirname, '..', 'www', 'index.html'));
-// });
-
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
     var err = new Error('path ' + req.path + ' not found at the server');

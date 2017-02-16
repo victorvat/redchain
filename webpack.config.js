@@ -4,46 +4,31 @@ var webpack = require('webpack');
 
 var isProduction = process.env.NODE_ENV === 'production';
 
-var clientLoaders = [];
-//var commonLoaders = [
-//    {
-//        test: /\.json$/,
-//        loader: 'json-loader'
-//    }
-//];
+var defLoaders = [
+    {
+        test: /\.jsx$/,
+        exclude: /node_modules/,
+        loader: 'babel-loader',
+        query: { presets: ['es2015', 'react'] }
+    }
+]
+
+var defOutput = {
+    path: './build',
+    publicPath: '/',
+}
 
 module.exports = [
     {
         entry: './client/assets/main.jsx',
-        output: {
-            path: './build',
-            publicPath: '/',
-            filename: 'main.js'
-        },
-        resolve: {
-            extensions: ['.js', '.jsx']
-        },
-        // plugins: clientLoaders.concat([
-        //     new ExtractTextPlugin('index.css', {
-        //         allChunks: true
-        //     })
-        // ]),
-        module: {
-            loaders: [
-                {
-                    test: /\.jsx$/,
-                    exclude: /node_modules/,
-                    loader: 'babel-loader',
-                    query: {
-                        presets: ['es2015', 'react']
-                    }
-                }
-                // ,
-                // {
-                //     test: /\.scss$/,
-                //     loader: ExtractTextPlugin.extract('css!sass')
-                // }
-            ]
-        }
+        output: Object.assign({filename: 'main.js'}, defOutput),
+        resolve: { extensions: ['.js', '.jsx'] },
+        module: { loaders: defLoaders }
+    },
+    {
+        entry: './client/login.jsx',
+        output: Object.assign({filename: 'login.js'}, defOutput),
+        resolve: { extensions: ['.js', '.jsx'] },
+        module: { loaders: defLoaders }
     }
 ];

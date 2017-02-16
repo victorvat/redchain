@@ -8,7 +8,7 @@ var configExpiresIn = parseInt(config.security.expiresIn);
 // console.log('configExpiresIn is ' + configExpiresIn);
 
 exports.getToken = function (user) {
-    // console.log('getToken has user = ' + user);
+    console.log('getToken has user = ' + user);
     var newToken = jwt.sign(user,
 			    secretKey,
 			    {
@@ -43,27 +43,27 @@ exports.verifyOrdinaryUser = function (req, res, next) {
 
     // decode token
     if (token) {
-	// console.log('Found token ' + token);
+	    // console.log('Found token ' + token);
         // verifies secret and checks exp
-	jwt.verify(token, secretKey, function (err, decoded) {
+	    jwt.verify(token, secretKey, function (err, decoded) {
             if (err) {
                 // var err = new Error('You are not authenticated!');
                 // err.status = 401;
-		// var today = new Date();
-		// console.log('Current is ' + today + ' UTC=' + today.getTime());
-		// if(decoded) {
-		//     if(decoded.iat){
-		// 	var iat = new Date(1000*decoded.iat);
-		// 	console.log('Issued at ' + iat + ' UTC=' + decoded.iat + "000");
-		//     }
-		//     if(decoded.exp){
-		// 	var exp = new Date(1000*decoded.exp);
-		// 	console.log('Expired at ' + exp + ' UTC=' + decoded.exp + "000");
-		//     }
-		// }
-		console.log(err.name + ' ' + err.message);
-		console.log('User is not authenticated');
-		res.redirect('/users/login');
+                // var today = new Date();
+                // console.log('Current is ' + today + ' UTC=' + today.getTime());
+                // if(decoded) {
+                //     if(decoded.iat){
+                // 	var iat = new Date(1000*decoded.iat);
+                // 	console.log('Issued at ' + iat + ' UTC=' + decoded.iat + "000");
+                //     }
+                //     if(decoded.exp){
+                // 	var exp = new Date(1000*decoded.exp);
+                // 	console.log('Expired at ' + exp + ' UTC=' + decoded.exp + "000");
+                //     }
+                // }
+                console.log(err.name + ' ' + err.message);
+                console.log('User is not authenticated');
+                res.redirect('/login');
                 // return next(err);
             } else {
                 // if everything is good, save to request for use in other routes
@@ -94,9 +94,9 @@ exports.verifyOrdinaryUser = function (req, res, next) {
         // return an error
         // var err = new Error('No token provided!');
         // err.status = 403;
-	// err.code = 403;
-	console.log('User did not provide token');
-	res.redirect('/users/login');
+        // err.code = 403;
+        console.log('User did not provide token');
+        res.redirect('/login');
         // return next(err);
     }
 };

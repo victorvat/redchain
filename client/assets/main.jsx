@@ -16,8 +16,10 @@ import DocSpecPage from './docSpecPage.jsx';
 import OpRulePage from './opRulePage.jsx';
 
 const content = (
-    <Route path="/" component={MainPage}>
-      <Route path="/d">
+    <Route path="/">
+      <IndexRoute component={MainPage} />
+      <Route path="/login" component={LoginPage} />
+      <Route path="/d" component={MainPage}>
         <Route path="doc">
           <IndexRoute component={DocPage.FindPage} />
           <Route path="find" component={DocPage.FindPage} />
@@ -61,7 +63,6 @@ const content = (
           <Route path="edit/:crule" component={OpRulePage.EditPage} />
         </Route>
       </Route>
-      <Route path="login" component={LoginPage} />
     </Route>
 )
 

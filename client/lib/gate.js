@@ -1,4 +1,5 @@
 // load.js с промисами
+import store from '../store';
 
 function get(url) 
 {
@@ -27,10 +28,15 @@ function post(url, data)
 { 
   console.log("GATE.post", url);
 
+  var state = store.getState();
+  var token = state.token;
+  console.log("GATE.post token", token);
+
   return new Promise((success, fail) => {
     const xhr = new XMLHttpRequest();
     xhr.open('post', url);
     xhr.setRequestHeader('Content-type', 'application/json; charset=utf-8');
+    xhr.setRequestHeader('X-Access-Token', token);
     xhr.responseType = 'json';
 
     xhr.addEventListener('load', () => {

@@ -1,5 +1,7 @@
 import React, { PropTypes } from 'react';
+import store from '../store';
 import LoginForm from '../components/LoginForm.jsx';
+import { browserHistory } from 'react-router';
 
 class LoginPage extends React.Component {
 
@@ -45,11 +47,11 @@ class LoginPage extends React.Component {
     xhr.responseType = 'json';
     xhr.addEventListener('load', () => {
       if (xhr.status === 200) {
-        this.setState({
-          errors: {}
-        });
-        console.log('The form is valid');
-        alart("Welcom!")
+        // this.setState({
+        //   errors: {}
+        // });
+        store.dispatch({type: 'LOGON', token: xhr.response.token });
+        browserHistory.push("/");
       } else {
         const errors = xhr.response.errors ? xhr.response.errors : {};
         alert(xhr.response.message); 

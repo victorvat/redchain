@@ -31,10 +31,8 @@ router.post('/register', function(req, res) {
 
 router.post('/login', 
   (req, res, next) => {
-		console.log('>>> passport.authenticate');
     passport.authenticate('local',
 			(err, user, info) => {
-				///// >>> 1
 				if (err) {
 				  console.log('Error when authenticate', err);
 				  return next(err);
@@ -52,32 +50,20 @@ router.post('/login',
 							err: {message:'Could not log in user'}
 						});
 					}
-				
-					var token = verifyUser.getToken(user);
-					res.status(200).json({
-						status: 'Login successful!',
-						success: true,
-						token: token
-					});
-	      });
-				///// <<< 1
+					verifyUser.acceptUser(req, res, user);
+	      }); // req.logIn
 	    }
 		)(req,res,next);
-		console.log('<<< passport.authenticate');
   }
 );
 
 function doLogout(req, res) {
     req.logout();
     res.status(200).json({
-	  status: 'Bye!'
+			status: 'Bye!'
     });
 }
 
-router.use('/logout',
-    function(req, res) {
-		doLogout(req, res);
-    }
-)
+router.use('/logout', doLogout);
 
 module.exports = router;

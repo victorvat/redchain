@@ -20,7 +20,7 @@ var defOutput = {
 
 module.exports = [
     {
-        entry: './client/assets/main.jsx',
+        entry: './client/main.jsx',
         output: Object.assign({filename: 'main.js'}, defOutput),
         resolve: { extensions: ['.js', '.jsx'] },
         module: { loaders: defLoaders }

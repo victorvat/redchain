@@ -1,13 +1,12 @@
-var authUser = require('../models/authUser');
-var jwt = require('jsonwebtoken'); // used to create, sign, and verify tokens
+const jwt = require('jsonwebtoken'); // used to create, sign, and verify tokens
 
-var config = require('./config');
-var secretKey = config.security.secretKey;
-var configExpiresIn = parseInt(config.security.expiresIn);
+const authUser = require('../models/authUser');
+const config = require('./config');
 
-// console.log('configExpiresIn is ' + configExpiresIn);
+const secretKey = config.security.secretKey;
+const configExpiresIn = parseInt(config.security.expiresIn);
 
-exports.getToken = function (user) {
+getToken = function(user) {
     console.log('getToken has user = ' + user);
     var newToken = jwt.sign(user,
 			    secretKey,
@@ -37,7 +36,24 @@ exports.getToken = function (user) {
     return newToken;
 };
 
-exports.verifyOrdinaryUser = function (req, res, next) {
+acceptUser = function (req, res, user) {
+    var token = getToken(user);
+    res.status(200).json({
+        status: 'Login successful!',
+        success: true,
+        token
+    });
+}
+
+denyUser = function(req, res) {
+    req.logout();
+    res.status(401).json({
+        status: 'Missing user authenticate.',
+        success: false
+    });
+}
+
+verifyOrdinaryUser = function(req, res, next) {
     // check header or url parameters or post parameters for token
     var token = req.body.token || req.query.token || req.headers['x-access-token'];
 
@@ -63,7 +79,7 @@ exports.verifyOrdinaryUser = function (req, res, next) {
                 // }
                 console.log(err.name + ' ' + err.message);
                 console.log('User is not authenticated');
-                res.redirect('/login');
+                denyUser(req, res);
                 // return next(err);
             } else {
                 // if everything is good, save to request for use in other routes
@@ -96,7 +112,8 @@ exports.verifyOrdinaryUser = function (req, res, next) {
         // err.status = 403;
         // err.code = 403;
         console.log('User did not provide token');
-        res.redirect('/login');
-        // return next(err);
+        denyUser(req, res);
     }
 };
+
+module.exports = { acceptUser, denyUser, verifyOrdinaryUser, getToken };

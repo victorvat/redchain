@@ -74,12 +74,12 @@ passport.deserializeUser(
     }
 );
 
-app.get('/login*', (req, res) => {
-	console.log('===/login*', req.path);
-    res.sendFile(path.resolve(__dirname, 'public', 'login.html'));
-});
+// app.get('/login*', (req, res) => {
+// 	console.log('===/login*', req.path);
+//     res.sendFile(path.resolve(__dirname, 'public', 'login.html'));
+// });
 
-app.get('/d/*', (req, res) => {
+app.get('/d/*|/login', (req, res) => {
 	console.log('===/d/*', req.path);
     res.sendFile(path.resolve(__dirname, 'public', 'index.html'));
 });

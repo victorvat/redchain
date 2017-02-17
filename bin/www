@@ -10,14 +10,20 @@ var debug = require('debug')('redchain:server');
 var http = require('http');
 var https = require('https');
 var fs = require('fs');
- 
+var config = require('../server/config.js');
+
+debugger;
 /**
  * Get port from environment and store in Express.
  */
 
-var port = normalizePort(process.env.PORT || '3000');
+var port = normalizePort(process.env.PORT || config.common.port || '3000');
+var secport = normalizePort(config.security.secport || '3443');
+var privatekey_file = (config.security.privatekey_file || __dirname+'/private.key');
+var certificate_file = (config.security.certificate_file || __dirname+'/certificate_file.pem');
+
 app.set('port', port);
-app.set('secPort',port+443);
+app.set('secPort', secport);
 
 /**
  * Create HTTP server.
@@ -40,9 +46,9 @@ server.on('listening', onListening);
  */
 console.log('config.https.mode', config.https.mode || "OFF"); 
 if (config.https.mode ) {
-  const options = {
-      key: fs.readFileSync(__dirname+'/private.key'),
-      cert: fs.readFileSync(__dirname+'/certificate.pem')
+  var options = {
+      key: fs.readFileSync(privatekey_file),
+      cert: fs.readFileSync(certificate_file)
   };
   var secureServer = https.createServer(options,app);
 

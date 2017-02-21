@@ -25,6 +25,12 @@ port = 3000
 connectionString = postgres://username:password@hostname:port/dbname
 
 ; -----------------------------------------------------
+; lodir is used as default catalogue for lo_export and lo_import functions
+; default is $PROJECT/lo
+; -----------------------------------------------------
+lodir = lo
+
+; -----------------------------------------------------
 ; security section
 ; -----------------------------------------------------
 [security]

@@ -5,6 +5,9 @@ import { Form, FormGroup, FormControl, Col, Button, ControlLabel, Table } from '
 import StateLookup from './stateLookup.jsx';
 import OpenBtn from '../components/openBtn.jsx';
 
+import PhotoSheet from '../components/photoSheet.jsx'
+import PhotoUpload from '../components/photoUpload.jsx'
+
 const FrmFind = ({
   onSubmit,
   onChange,
@@ -356,13 +359,23 @@ class EditPage extends React.Component {
   }
 
   render() {
+    let uploadParams = {
+       pid: this.props.params.pid
+    }
+    let loadParams = {
+       pid: this.props.params.pid
+    }
     return (
+      <div>
       <FrmEdit
         onSubmit={this.onFormSubmit.bind(this)}
         onChange={this.onFieldChange.bind(this)}
         data={this.state.data} 
         mode={this.state.mode} 
       />
+      <PhotoUpload params={uploadParams}/>
+      <PhotoSheet params={loadParams}/>
+      </div>
     )
   }
 };

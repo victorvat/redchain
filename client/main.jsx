@@ -1,23 +1,26 @@
-var React = require("react");
-var ReactDOM = require("react-dom");
-
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { Provider } from 'react-redux'
 import { Router, Route, IndexRoute, browserHistory } from 'react-router';
 
-import MainPage from './mainPage.jsx';
-import LoginPage from './loginPage.jsx';
+import store from './store';
 
+import MainPage from './assets/mainPage.jsx';
+import LoginPage from './assets/loginPage.jsx';
 
-import DocPage from './docPage.jsx';
-import PersonPage from './personPage.jsx';
-import AgentPage from './agentPage.jsx';
-import StatePage from './statePage.jsx';
-import ContactPage from './contactPage.jsx';
-import DocSpecPage from './docSpecPage.jsx';
-import OpRulePage from './opRulePage.jsx';
+import DocPage from './assets/docPage.jsx';
+import PersonPage from './assets/personPage.jsx';
+import AgentPage from './assets/agentPage.jsx';
+import StatePage from './assets/statePage.jsx';
+import ContactPage from './assets/contactPage.jsx';
+import DocSpecPage from './assets/docSpecPage.jsx';
+import OpRulePage from './assets/opRulePage.jsx';
 
 const content = (
-    <Route path="/" component={MainPage}>
-      <Route path="/d">
+    <Route path="/">
+      <IndexRoute component={MainPage} />
+      <Route path="/login" component={LoginPage} />
+      <Route path="/d" component={MainPage}>
         <Route path="doc">
           <IndexRoute component={DocPage.FindPage} />
           <Route path="find" component={DocPage.FindPage} />
@@ -61,7 +64,6 @@ const content = (
           <Route path="edit/:crule" component={OpRulePage.EditPage} />
         </Route>
       </Route>
-      <Route path="login" component={LoginPage} />
     </Route>
 )
 
@@ -69,9 +71,11 @@ class MainRoute extends React.Component {
     render() {
         console.log('Route', browserHistory.getCurrentLocation());
         return (
-            <Router history={browserHistory}>
+            <Provider store={store}>
+              <Router history={browserHistory}>
                 {content}
-            </Router>
+              </Router>
+            </Provider>
         )
     }
 }

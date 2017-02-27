@@ -5,6 +5,7 @@
  */
 
 var app = require('../app');
+var config = require('../server/config');
 var debug = require('debug')('redchain:server');
 var http = require('http');
 var https = require('https');
@@ -44,20 +45,23 @@ server.on('listening', onListening);
 /**
  * Create HTTPS server.
  */
-var options = {
-    key: fs.readFileSync(privatekey_file),
-    cert: fs.readFileSync(certificate_file)
-};
-var secureServer = https.createServer(options,app);
+console.log('config.security.mode', config.security.mode || "OFF"); 
+if (config.security.mode ) {
+  var options = {
+      key: fs.readFileSync(privatekey_file),
+      cert: fs.readFileSync(certificate_file)
+  };
+  var secureServer = https.createServer(options,app);
 
-/**
- * Listen on provided port, on all network interfaces.
- */
-secureServer.listen(app.get('secPort'), function() {
-    console.log('Server listening on port ',app.get('secPort'));
-});
-secureServer.on('error', onError);
-secureServer.on('listening', onListening);
+  /**
+   * Listen on provided port, on all network interfaces.
+   */
+  secureServer.listen(app.get('secPort'), function() {
+      console.log('Server listening on port ',app.get('secPort'));
+  });
+  secureServer.on('error', onError);
+  secureServer.on('listening', onListening);
+}
 
 /**
  * Normalize a port into a number, string, or false.

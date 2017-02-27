@@ -3,6 +3,8 @@ import { Link, browserHistory } from 'react-router';
 import { Navbar, Nav, NavItem, NavDropdown, MenuItem } from 'react-bootstrap';
 import { LinkContainer } from 'react-router-bootstrap';
 
+import store from '../store';
+
 const nav_content = (
     <Navbar.Collapse>
       <Nav role="navigation">
@@ -63,8 +65,20 @@ const nav_content = (
     </Navbar.Collapse>
 );  
 
+const nav_content_off = (
+    <Navbar.Collapse>
+      <Nav pullRight>
+        <LinkContainer to="/login" activeHref="active">
+            <NavItem eventKey={99} href="#">Login</NavItem>
+        </LinkContainer>
+      </Nav>
+    </Navbar.Collapse>
+);  
+
 class MainPage extends React.Component {
     render() {
+        const state = store.getState();
+
         return (
           <dev>  
             <Navbar inverse collapseOnSelect>
@@ -74,7 +88,8 @@ class MainPage extends React.Component {
                     </Navbar.Brand>
                     <Navbar.Toggle />
                 </Navbar.Header>
-                {nav_content}
+
+                {state.token===null ? nav_content_off : nav_content}
             </Navbar>
             {this.props.children}
           </dev>  

@@ -16,17 +16,20 @@ var app = express();
 
 // Secure traffic only
 app.all('*', function(req, res, next){
+    debugger; 
     // -------------------------------------
     // Local traffic should not be secured ??
     // -------------------------------------
-    if (req.hostname === "localhost") {
-	    return next();
-    };
+    
+    // if (req.hostname === "localhost") {
+    // 	return next();
+    // };
     console.log('req start: ',req.secure, req.hostname, req.url, app.get('port'));
-    if (req.secure) {
-	    return next();
-    };
-    res.redirect('https://'+req.hostname+':'+app.get('secPort')+req.url);
+    // if (!req.secure) {
+     	return next();
+    // };
+    // res.redirect('https://'+req.hostname+':'+app.get('secPort')+req.url);
+    
 });
 
 // console debug trace
@@ -71,7 +74,8 @@ passport.serializeUser(
 	if (app.get('env') === 'development') {
 	    console.log('passport will call authUser.serializeUser', user);
 	}
-	  authUser.serializeUser(user, cb);
+	console.log('passport will call authUser.serializeUser', user);
+	authUser.serializeUser(user, cb);
     }
 );
 passport.deserializeUser(
@@ -79,7 +83,8 @@ passport.deserializeUser(
 	if (app.get('env') === 'development') {
 	    console.log('passport will call deserializeUser');
 	}
-	  authUser.deserializeUser(id, cb);
+	  console.log('passport will call deserializeUser');
+	authUser.deserializeUser(id, cb);
     }
 );
 
@@ -151,7 +156,10 @@ if (app.get('env') === 'development') {
     app.use(function(err, req, res, next) {
 	// res.locals.message = err.message;
 	// res.locals.error = req.app.get('env') === 'development' ? err : {};
-	
+	if (err) {
+	    console.log('err is ' + err);
+	    return next(err);
+	}
 	res.status( err.code || 500 )
 	    .json({
 		status: 'error',
@@ -167,11 +175,15 @@ if (app.get('env') === 'development') {
 // production error handler
 // no stacktraces leaked to user
 app.use(function(err, req, res, next) {
-  res.status(err.status || 500)
-  .json({
-    status: 'error',
-    message: err.message
-  });
+    if (err) {
+	console.log('err is ' + err);
+	return next(err);
+    }
+    res.status(err.status || 500)
+	.json({
+	    status: 'error',
+	    message: err.message
+	});
 });
 
 module.exports = app;

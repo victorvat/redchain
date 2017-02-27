@@ -1,6 +1,9 @@
+var express = require('express');
+var app = express();
+
 var records = [
     { id: 1, username: 'mars', password: 'secret', displayName: 'Mars Garai', emails: [ { value: 'mars@redchain.com' } ] }
-  , { id: 2, username: 'vik', password: 'secret', displayName: 'Viktor Ilin', emails: [ { value: 'vik@redchain.com' } ] }
+  , { id: 2, username: 'vic', password: '0', displayName: 'Viktor Ilin', emails: [ { value: 'vic@redchain.com' } ] }
   , { id: 3, username: 'vvg', password: '666', displayName: 'Victor Vat', emails: [ { value: 'vvg@redchain.com' } ] }
   // , { id: 4, username: 'test', password: 'qwert1', displayName: 'Test User', emails: [ { value: 'test@redchain.com' } ] }
 ];
@@ -16,11 +19,15 @@ function findById(id, cb) {
 }
 
 function findByUsername(username, cb) {
-    // console.log('findByUsername will search ' + username);
+    if (app.get('env') === 'development') {
+	console.log('findByUsername will search ' + username);
+    }
     for (var i = 0, len = records.length; i < len; i++) {
 	var record = records[i];
 	if (record.username === username) {
-	    // console.log('findByUsername found ' + username);
+	    if (app.get('env') === 'development') {
+		console.log('findByUsername found ' + username);
+	    }
             return cb(null, record);
 	}
     }
@@ -28,12 +35,17 @@ function findByUsername(username, cb) {
 }
 
 function authenticate(username, password, cb) {
-    // database dummy - find user and verify password
-    // console.log('authenticate will call findByUsername');
+    if (app.get('env') === 'development') {
+	console.log('AuthUser.authenticate', username, password);
+	// database dummy - find user and verify password
+	console.log('authenticate will call findByUsername');
+    }
     findByUsername(username, function(err, user) {
 	if (err) { return cb(err); }
 	if (!user) { return cb(null, false); }
-	if (user.password != password) { return cb(null, false); }
+	if (user.password != password) {
+	    return cb(null, false);
+	}
 	return cb(null, user);
     });
 }

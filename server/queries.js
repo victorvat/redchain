@@ -177,12 +177,14 @@ function docspec_DoUpdate(req, res, next) {
         if(docspec_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
-        } else if(docspec_HasColname(parstr)) {
-            setStr = makeSet(setStr);
-            setStr += parstr + "=${" + parnext + "}";
         } else {
-            return next(new Error('column ' + parnext + " not exists in docspec!"));
-        }
+            if(docspec_HasColname(parstr)) {
+                setStr = makeSet(setStr);
+                setStr += parstr + "=${" + parnext + "}";
+            } else {
+                return next(new Error('column ' + parnext + " not exists in docspec!"));
+            }
+         }
     }
     if(setStr.length == 0)
         return next(new Error('not found any fields for update the docspec!'));
@@ -443,12 +445,14 @@ function doc_DoUpdate(req, res, next) {
         if(doc_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
-        } else if(doc_HasColname(parstr)) {
-            setStr = makeSet(setStr);
-            setStr += parstr + "=${" + parnext + "}";
         } else {
-            return next(new Error('column ' + parnext + " not exists in doc!"));
-        }
+            if(doc_HasColname(parstr)) {
+                setStr = makeSet(setStr);
+                setStr += parstr + "=${" + parnext + "}";
+            } else {
+                return next(new Error('column ' + parnext + " not exists in doc!"));
+            }
+         }
     }
     if(setStr.length == 0)
         return next(new Error('not found any fields for update the doc!'));
@@ -674,12 +678,14 @@ function state_DoUpdate(req, res, next) {
         if(state_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
-        } else if(state_HasColname(parstr)) {
-            setStr = makeSet(setStr);
-            setStr += parstr + "=${" + parnext + "}";
         } else {
-            return next(new Error('column ' + parnext + " not exists in state!"));
-        }
+            if(state_HasColname(parstr)) {
+                setStr = makeSet(setStr);
+                setStr += parstr + "=${" + parnext + "}";
+            } else {
+                return next(new Error('column ' + parnext + " not exists in state!"));
+            }
+         }
     }
     if(setStr.length == 0)
         return next(new Error('not found any fields for update the state!'));
@@ -943,12 +949,18 @@ function person_DoUpdate(req, res, next) {
         if(person_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
-        } else if(person_HasColname(parstr)) {
-            setStr = makeSet(setStr);
-            setStr += parstr + "=${" + parnext + "}";
         } else {
-            return next(new Error('column ' + parnext + " not exists in person!"));
-        }
+            if(person_HasColname(parstr)) {
+                setStr = makeSet(setStr);
+                if(person_HasOID(parstr)) {
+                   setStr += parstr + "=lo_import('" + req.body.params[parnext] + "')";
+                } else {
+                   setStr += parstr + "=${" + parnext + "}";
+                }
+            } else {
+                return next(new Error('column ' + parnext + " not exists in person!"));
+            }
+         }
     }
     if(setStr.length == 0)
         return next(new Error('not found any fields for update the person!'));
@@ -1230,12 +1242,18 @@ function photodata_DoUpdate(req, res, next) {
         if(photodata_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
-        } else if(photodata_HasColname(parstr)) {
-            setStr = makeSet(setStr);
-            setStr += parstr + "=${" + parnext + "}";
         } else {
-            return next(new Error('column ' + parnext + " not exists in photodata!"));
-        }
+            if(photodata_HasColname(parstr)) {
+                setStr = makeSet(setStr);
+                if(photodata_HasOID(parstr)) {
+                   setStr += parstr + "=lo_import('" + req.body.params[parnext] + "')";
+                } else {
+                   setStr += parstr + "=${" + parnext + "}";
+                }
+            } else {
+                return next(new Error('column ' + parnext + " not exists in photodata!"));
+            }
+         }
     }
     if(setStr.length == 0)
         return next(new Error('not found any fields for update the photodata!'));
@@ -1455,12 +1473,14 @@ function photospec_DoUpdate(req, res, next) {
         if(photospec_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
-        } else if(photospec_HasColname(parstr)) {
-            setStr = makeSet(setStr);
-            setStr += parstr + "=${" + parnext + "}";
         } else {
-            return next(new Error('column ' + parnext + " not exists in photospec!"));
-        }
+            if(photospec_HasColname(parstr)) {
+                setStr = makeSet(setStr);
+                setStr += parstr + "=${" + parnext + "}";
+            } else {
+                return next(new Error('column ' + parnext + " not exists in photospec!"));
+            }
+         }
     }
     if(setStr.length == 0)
         return next(new Error('not found any fields for update the photospec!'));
@@ -1700,12 +1720,18 @@ function audiodata_DoUpdate(req, res, next) {
         if(audiodata_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
-        } else if(audiodata_HasColname(parstr)) {
-            setStr = makeSet(setStr);
-            setStr += parstr + "=${" + parnext + "}";
         } else {
-            return next(new Error('column ' + parnext + " not exists in audiodata!"));
-        }
+            if(audiodata_HasColname(parstr)) {
+                setStr = makeSet(setStr);
+                if(audiodata_HasOID(parstr)) {
+                   setStr += parstr + "=lo_import('" + req.body.params[parnext] + "')";
+                } else {
+                   setStr += parstr + "=${" + parnext + "}";
+                }
+            } else {
+                return next(new Error('column ' + parnext + " not exists in audiodata!"));
+            }
+         }
     }
     if(setStr.length == 0)
         return next(new Error('not found any fields for update the audiodata!'));
@@ -1955,12 +1981,14 @@ function operator_DoUpdate(req, res, next) {
         if(operator_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
-        } else if(operator_HasColname(parstr)) {
-            setStr = makeSet(setStr);
-            setStr += parstr + "=${" + parnext + "}";
         } else {
-            return next(new Error('column ' + parnext + " not exists in operator!"));
-        }
+            if(operator_HasColname(parstr)) {
+                setStr = makeSet(setStr);
+                setStr += parstr + "=${" + parnext + "}";
+            } else {
+                return next(new Error('column ' + parnext + " not exists in operator!"));
+            }
+         }
     }
     if(setStr.length == 0)
         return next(new Error('not found any fields for update the operator!'));
@@ -2208,12 +2236,14 @@ function regpoint_DoUpdate(req, res, next) {
         if(regpoint_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
-        } else if(regpoint_HasColname(parstr)) {
-            setStr = makeSet(setStr);
-            setStr += parstr + "=${" + parnext + "}";
         } else {
-            return next(new Error('column ' + parnext + " not exists in regpoint!"));
-        }
+            if(regpoint_HasColname(parstr)) {
+                setStr = makeSet(setStr);
+                setStr += parstr + "=${" + parnext + "}";
+            } else {
+                return next(new Error('column ' + parnext + " not exists in regpoint!"));
+            }
+         }
     }
     if(setStr.length == 0)
         return next(new Error('not found any fields for update the regpoint!'));
@@ -2436,12 +2466,14 @@ function oprule_DoUpdate(req, res, next) {
         if(oprule_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
-        } else if(oprule_HasColname(parstr)) {
-            setStr = makeSet(setStr);
-            setStr += parstr + "=${" + parnext + "}";
         } else {
-            return next(new Error('column ' + parnext + " not exists in oprule!"));
-        }
+            if(oprule_HasColname(parstr)) {
+                setStr = makeSet(setStr);
+                setStr += parstr + "=${" + parnext + "}";
+            } else {
+                return next(new Error('column ' + parnext + " not exists in oprule!"));
+            }
+         }
     }
     if(setStr.length == 0)
         return next(new Error('not found any fields for update the oprule!'));
@@ -2684,12 +2716,14 @@ function contact_DoUpdate(req, res, next) {
         if(contact_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
-        } else if(contact_HasColname(parstr)) {
-            setStr = makeSet(setStr);
-            setStr += parstr + "=${" + parnext + "}";
         } else {
-            return next(new Error('column ' + parnext + " not exists in contact!"));
-        }
+            if(contact_HasColname(parstr)) {
+                setStr = makeSet(setStr);
+                setStr += parstr + "=${" + parnext + "}";
+            } else {
+                return next(new Error('column ' + parnext + " not exists in contact!"));
+            }
+         }
     }
     if(setStr.length == 0)
         return next(new Error('not found any fields for update the contact!'));
@@ -2912,12 +2946,14 @@ function agent_DoUpdate(req, res, next) {
         if(agent_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
-        } else if(agent_HasColname(parstr)) {
-            setStr = makeSet(setStr);
-            setStr += parstr + "=${" + parnext + "}";
         } else {
-            return next(new Error('column ' + parnext + " not exists in agent!"));
-        }
+            if(agent_HasColname(parstr)) {
+                setStr = makeSet(setStr);
+                setStr += parstr + "=${" + parnext + "}";
+            } else {
+                return next(new Error('column ' + parnext + " not exists in agent!"));
+            }
+         }
     }
     if(setStr.length == 0)
         return next(new Error('not found any fields for update the agent!'));
@@ -3135,12 +3171,14 @@ function access_DoUpdate(req, res, next) {
         if(access_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
-        } else if(access_HasColname(parstr)) {
-            setStr = makeSet(setStr);
-            setStr += parstr + "=${" + parnext + "}";
         } else {
-            return next(new Error('column ' + parnext + " not exists in access!"));
-        }
+            if(access_HasColname(parstr)) {
+                setStr = makeSet(setStr);
+                setStr += parstr + "=${" + parnext + "}";
+            } else {
+                return next(new Error('column ' + parnext + " not exists in access!"));
+            }
+         }
     }
     if(setStr.length == 0)
         return next(new Error('not found any fields for update the access!'));
@@ -3374,12 +3412,18 @@ function docimage_DoUpdate(req, res, next) {
         if(docimage_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
-        } else if(docimage_HasColname(parstr)) {
-            setStr = makeSet(setStr);
-            setStr += parstr + "=${" + parnext + "}";
         } else {
-            return next(new Error('column ' + parnext + " not exists in docimage!"));
-        }
+            if(docimage_HasColname(parstr)) {
+                setStr = makeSet(setStr);
+                if(docimage_HasOID(parstr)) {
+                   setStr += parstr + "=lo_import('" + req.body.params[parnext] + "')";
+                } else {
+                   setStr += parstr + "=${" + parnext + "}";
+                }
+            } else {
+                return next(new Error('column ' + parnext + " not exists in docimage!"));
+            }
+         }
     }
     if(setStr.length == 0)
         return next(new Error('not found any fields for update the docimage!'));
@@ -3597,12 +3641,14 @@ function ref_DoUpdate(req, res, next) {
         if(ref_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
-        } else if(ref_HasColname(parstr)) {
-            setStr = makeSet(setStr);
-            setStr += parstr + "=${" + parnext + "}";
         } else {
-            return next(new Error('column ' + parnext + " not exists in ref!"));
-        }
+            if(ref_HasColname(parstr)) {
+                setStr = makeSet(setStr);
+                setStr += parstr + "=${" + parnext + "}";
+            } else {
+                return next(new Error('column ' + parnext + " not exists in ref!"));
+            }
+         }
     }
     if(setStr.length == 0)
         return next(new Error('not found any fields for update the ref!'));

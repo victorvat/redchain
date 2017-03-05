@@ -15,6 +15,7 @@ import StatePage from './assets/statePage.jsx';
 import ContactPage from './assets/contactPage.jsx';
 import DocSpecPage from './assets/docSpecPage.jsx';
 import OpRulePage from './assets/opRulePage.jsx';
+import PhotoFind from './assets/photoFind.jsx';
 
 const content = (
     <Route path="/">
@@ -62,6 +63,10 @@ const content = (
           <Route path="find" component={OpRulePage.FindPage} />
           <Route path="create" component={OpRulePage.CreatePage} />
           <Route path="edit/:crule" component={OpRulePage.EditPage} />
+        </Route>
+        <Route path="photo">
+          <IndexRoute component={PhotoFind} />
+          <Route path="find" component={PhotoFind} />
         </Route>
       </Route>
     </Route>

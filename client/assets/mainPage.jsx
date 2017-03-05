@@ -56,6 +56,9 @@ const nav_content = (
             <NavItem href="#">OpRule</NavItem>
           </LinkContainer>
         </NavDropdown>
+        <LinkContainer to="/d/photo/find" activeHref="active">
+          <NavItem href="#">PhotoFind</NavItem>
+        </LinkContainer>
       </Nav>
       <Nav pullRight>
         <LinkContainer to="/login" activeHref="active">
@@ -78,7 +81,7 @@ const nav_content_off = (
 class MainPage extends React.Component {
     render() {
         const state = store.getState();
-
+        const isLogon = true; //(state.token !== null);
         return (
           <dev>  
             <Navbar inverse collapseOnSelect>
@@ -89,7 +92,7 @@ class MainPage extends React.Component {
                     <Navbar.Toggle />
                 </Navbar.Header>
 
-                {state.token===null ? nav_content_off : nav_content}
+                {isLogon ? nav_content : nav_content_off}
             </Navbar>
             {this.props.children}
           </dev>  

@@ -94,7 +94,7 @@ app.use('/users', authRouter);
 /////////////////////////////////////////////////////////////////
 app.use('/ext', extRouter);
 app.use('/api', 
-	verifyUser.verifyOrdinaryUser,
+//	verifyUser.verifyOrdinaryUser,
 	apiRouter,
 	function (req, res, next) {
 	    console.log('res is ' + res);
@@ -102,12 +102,12 @@ app.use('/api',
 	    console.log('decoded.id is ' + req.decoded.id);
 	    console.log('decoded.username is ' + req.decoded.username);
 	    authUser.deserializeUser(
-		req.decoded.id,
-		function(err, user){
-		    var newToken = verifyUser.getToken(user);
-		    // console.log('new token is ' + newToken);
-		    req.dbAnswer['nexttoken'] = newToken;
-		}
+			req.decoded.id,
+			function(err, user) {
+				var newToken = verifyUser.getToken(user);
+				// console.log('new token is ' + newToken);
+				req.dbAnswer['nexttoken'] = newToken;
+			}
 	    );
 	    res.status(200).json(req.dbAnswer);
 	}

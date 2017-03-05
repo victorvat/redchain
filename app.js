@@ -8,30 +8,36 @@ const passport = require('passport');
 const Strategy = require('passport-local');
 const authUser = require('./models/authUser');
 const authRouter = require('./routes/authRouter');
-const extRouter= require('./routes/extRouter');
+const extRouter = require('./routes/extRouter');
 const apiRouter = require('./routes/index');
 var verifyUser = require('./server/verifyUser');
 
 var app = express();
 
 // Secure traffic only
-app.all('*', function(req, res, next){
-    if (req.hostname === "localhost") {
-	    return next();
-    };
-    console.log('req start: ',req.secure, req.hostname, req.url, app.get('port'));
-    if (req.secure) {
-	    return next();
-    };
-    res.redirect('https://'+req.hostname+':'+app.get('secPort')+req.url);
+app.all('*', function (req, res, next) {
+	debugger;
+	// -------------------------------------
+	// Local traffic should not be secured ??
+	// -------------------------------------
+
+	// if (req.hostname === "localhost") {
+	// 	return next();
+	// };
+	console.log('req start: ', req.secure, req.hostname, req.url, app.get('port'));
+	// if (!req.secure) {
+	return next();
+	// };
+	// res.redirect('https://'+req.hostname+':'+app.get('secPort')+req.url);
+
 });
 
 // console debug trace
 if (app.get('env') === 'development') {
-    app.use((req, res, next) => {
-	console.log('URL:', req.method, req.path);
-	next();
-    });
+	app.use((req, res, next) => {
+		console.log('URL:', req.method, req.path);
+		next();
+	});
 }
 
 // view engine setup
@@ -56,22 +62,30 @@ app.use(express.static(path.join(__dirname, 'build')));
 //////////////////////////
 app.use(passport.initialize());
 passport.use(new Strategy(
-    function(username, password, done) {
-	  console.log('passport will call authUser.authenticate');
-	  authUser.authenticate(username, password, done);
-    }
+	function (username, password, done) {
+		if (app.get('env') === 'development') {
+			console.log('passport will call authUser.authenticate');
+		}
+		authUser.authenticate(username, password, done);
+	}
 ));
 passport.serializeUser(
-    function(user, cb) {
-	  console.log('passport will call authUser.serializeUser', user);
-	  authUser.serializeUser(user, cb);
-    }
+	function (user, cb) {
+		if (app.get('env') === 'development') {
+			console.log('passport will call authUser.serializeUser', user);
+		}
+		console.log('passport will call authUser.serializeUser', user);
+		authUser.serializeUser(user, cb);
+	}
 );
 passport.deserializeUser(
-    function(id, cb) {
-	  console.log('passport will call deserializeUser');
-	  authUser.deserializeUser(id, cb);
-    }
+	function (id, cb) {
+		if (app.get('env') === 'development') {
+			console.log('passport will call deserializeUser');
+		}
+		console.log('passport will call deserializeUser');
+		authUser.deserializeUser(id, cb);
+	}
 );
 
 // app.get('/login*', (req, res) => {
@@ -81,45 +95,47 @@ passport.deserializeUser(
 
 app.get('/d/*|/login', (req, res) => {
 	console.log('===/d/*', req.path);
-    res.sendFile(path.resolve(__dirname, 'public', 'index.html'));
+	res.sendFile(path.resolve(__dirname, 'public', 'index.html'));
 });
-
 app.use('/users', authRouter);
 
-/////////////////////////////////////////////////////////////////
-// You shouldn't use bodyParser.json, because it was already used
-// const jsonParser = bodyParser.json(); // Already at line 37
-// app.use('/ext', jsonParser, extRouter);
-// app.use('/api', jsonParser, apiRouter); 
-/////////////////////////////////////////////////////////////////
 app.use('/ext', extRouter);
-app.use('/api', 
-//	verifyUser.verifyOrdinaryUser,
+app.use('/api',
+	//	verifyUser.verifyOrdinaryUser,
 	apiRouter,
 	function (req, res, next) {
-	    console.log('res is ' + res);
-	    console.log('decoded is ' + req.decoded);
-	    console.log('decoded.id is ' + req.decoded.id);
-	    console.log('decoded.username is ' + req.decoded.username);
-	    authUser.deserializeUser(
+		if (app.get('env') === 'development') {
+			console.log('res is ' + res);
+			console.log('decoded is ' + req.decoded);
+			console.log('decoded.id is ' + req.decoded.id);
+			console.log('decoded.username is ' + req.decoded.username);
+		}
+		authUser.deserializeUser(
 			req.decoded.id,
-			function(err, user) {
+			function (err, user) {
 				var newToken = verifyUser.getToken(user);
 				// console.log('new token is ' + newToken);
-				req.dbAnswer['nexttoken'] = newToken;
+				if (req.dbAnswer) {
+					req.dbAnswer['nexttoken'] = newToken;
+				} else {
+					var err = new Error('path /api' + req.path + ' not found at the server');
+					err.status = 404;
+					err.code = 404;
+					next(err);
+				}
 			}
-	    );
-	    res.status(200).json(req.dbAnswer);
+		);
+		res.status(200).json(req.dbAnswer);
 	}
 );
-	
+
 // catch 404 and forward to error handler
-app.use(function(req, res, next) {
-    var err = new Error('path ' + req.path + ' not found at the server');
-    err.status = 404;
-    err.code = 404;
-    
-    next(err);
+app.use(function (req, res, next) {
+	var err = new Error('path ' + req.path + ' not found at the server');
+	err.status = 404;
+	err.code = 404;
+
+	next(err);
 });
 
 // error handlers
@@ -137,30 +153,37 @@ app.use(function(req, res, next) {
 // development error handler
 // will print stacktrace
 if (app.get('env') === 'development') {
-    app.use(function(err, req, res, next) {
-	// res.locals.message = err.message;
-	// res.locals.error = req.app.get('env') === 'development' ? err : {};
-	
-	res.status( err.code || 500 )
-	    .json({
-		status: 'error',
-		message: err.message,
-		stack: err.stack
-	    });
-	
-	// res.status(err.status || 500);
-	// res.render('error');
-    });
+	app.use(function (err, req, res, next) {
+		// res.locals.message = err.message;
+		// res.locals.error = req.app.get('env') === 'development' ? err : {};
+		if (err) {
+			console.log('err is ' + err);
+			return next(err);
+		}
+		res.status(err.code || 500)
+			.json({
+				status: 'error',
+				message: err.message,
+				stack: err.stack
+			});
+
+		// res.status(err.status || 500);
+		// res.render('error');
+	});
 }
 
 // production error handler
 // no stacktraces leaked to user
-app.use(function(err, req, res, next) {
-  res.status(err.status || 500)
-  .json({
-    status: 'error',
-    message: err.message
-  });
+app.use(function (err, req, res, next) {
+	if (err) {
+		console.log('err is ' + err);
+		return next(err);
+	}
+	res.status(err.status || 500)
+		.json({
+			status: 'error',
+			message: err.message
+		});
 });
 
 module.exports = app;

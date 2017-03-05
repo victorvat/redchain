@@ -1,7 +1,9 @@
+// var fs = require('fs');
 var promise = require('bluebird');
 var express = require('express');
 var app = express();
 var config = require('./config');
+// var pathstat = require('./pathstat');
 
 var options = {
   // Initialization Options
@@ -10,6 +12,7 @@ var options = {
 
 var pgp = require('pg-promise')(options);
 var db = pgp(config.database.connectionString);
+var deflodir = (config.database.lodir || (__dirname + "../lo"));
 
 function makeWhere(whereStr) {
     if(whereStr === undefined || whereStr.length == 0)
@@ -41,56 +44,68 @@ function makeSet(setStr) {
     return setStr;
 }
 
-var docSpec_collist_all = ['cspec','spec','spec_en'];
-function docSpec_HasColname(colname) {
-    return (docSpec_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
+function getLoDir(req, next) {
+   var lodir = (req.body.lodir || deflodir);
+   var lastsym = lodir.slice(-1);
+   if(lastsym!=="/")
+      lodir += "/";
+   // if(!pathstat.isDirectoryWritable(lodir, next))
+   //   return "ERROR";
+    
+    return lodir;
 }
 
-var docSpec_collist_keys = ['cspec'];
-function docSpec_HasKeyname(keyname) {
-    return (docSpec_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
+var docspec_collist_all = ['cspec','spec','spec_en'];
+function docspec_HasColname(colname) {
+    return (docspec_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
 }
 
-function docSpec_makeWhere(req, next) {
+var docspec_collist_keys = ['cspec'];
+function docspec_HasKeyname(keyname) {
+    return (docspec_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
+}
+
+function docspec_makeWhere(req, next) {
     var whereStr = '';
     if(req.body.params === undefined)
         return whereStr;
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(docSpec_HasColname(parstr)) {
+        if(docspec_HasColname(parstr)) {
+            whereStr = makeWhere(whereStr);
             switch(parstr) {
             case 'cspec':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " cspec = ${" + parnext + "}";
                 }
                 break;
             case 'spec':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " spec LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
                 }
                 break;
             case 'spec_en':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " spec_en LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
                 }
                 break;
             }
         } else {
-            next(new Error('column ' + parnext + " not exists in docspec!"));
+            next(new Error('column ' + parnext + ' not exists in docspec!'));
             return "ERROR";
         }
     }
     return whereStr;
 }
 
-function docSpec_DoSelect(req, res, next) {
-    var whereStr = docSpec_makeWhere(req, next);
+function docspec_DoSelect(req, res, next) {
+    var whereStr = docspec_makeWhere(req, next);
     if(whereStr == "ERROR")
         return;
-    var sqlStr = 'SELECT * FROM docspec ' + whereStr;
+    var sqlStr = "SELECT cspec" 
+                     + ",spec" 
+                     + ",spec_en"
+                     + " FROM docspec " + whereStr;
     if (app.get('env') === 'development') {
         // console.log( sqlStr );
         console.log(pgp.as.format(sqlStr, req.body.params));
@@ -98,9 +113,9 @@ function docSpec_DoSelect(req, res, next) {
     db.any(sqlStr, req.body.params)
         .then(function (data) {
             req.dbAnswer = {
-                    status: 'success',
+                    status: "success",
                     data: data,
-                    message: 'Retrieved from docspec'
+                    message: "Retrieved from docspec"
             };
             return next();
         })
@@ -109,7 +124,7 @@ function docSpec_DoSelect(req, res, next) {
     });
 }
 
-function docSpec_DoInsert(req, res, next) {
+function docspec_DoInsert(req, res, next) {
     if(req.body.params === undefined) {
         return next( new Error('insert params not found!'));
     }
@@ -117,11 +132,15 @@ function docSpec_DoInsert(req, res, next) {
     var parValues = '';
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(docSpec_HasColname(parstr)) {
-            parList = makeList(parList);
-            parList += parstr;
-            parValues = makeList(parValues);
-            parValues += "${" + parnext + "}";
+        if(docspec_HasColname(parstr)) {
+            if(req.body.params[parnext]) {
+               parList = makeList(parList);
+               parValues = makeList(parValues);
+               parList += parstr;
+               parValues += "${" + parnext + "}";
+            } else {
+               return next(new Error('column docspec.' + parnext + " has undefined value!"));
+            }
         } else {
             return next(new Error('column ' + parnext + " not exists in docspec!"));
         }
@@ -147,7 +166,7 @@ function docSpec_DoInsert(req, res, next) {
     });
 }
 
-function docSpec_DoUpdate(req, res, next) {
+function docspec_DoUpdate(req, res, next) {
     if(req.body.params === undefined) {
         return next( new Error('update params not found!'));
     }
@@ -155,15 +174,17 @@ function docSpec_DoUpdate(req, res, next) {
     var whereStr = '';
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(docSpec_HasKeyname(parstr)) {
+        if(docspec_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
-        } else if(docSpec_HasColname(parstr)) {
-            setStr = makeSet(setStr);
-            setStr += parstr + "=${" + parnext + "}";
         } else {
-            return next(new Error('column ' + parnext + " not exists in docspec!"));
-        }
+            if(docspec_HasColname(parstr)) {
+                setStr = makeSet(setStr);
+                setStr += parstr + "=${" + parnext + "}";
+            } else {
+                return next(new Error('column ' + parnext + " not exists in docspec!"));
+            }
+         }
     }
     if(setStr.length == 0)
         return next(new Error('not found any fields for update the docspec!'));
@@ -187,14 +208,14 @@ function docSpec_DoUpdate(req, res, next) {
     });
 }
 
-function docSpec_DoDelete(req, res, next) {
+function docspec_DoDelete(req, res, next) {
     if(req.body.params === undefined) {
         return next( new Error('delete params not found!'));
     }
     var whereStr = '';
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(docSpec_HasKeyname(parstr)) {
+        if(docspec_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
         } else {
@@ -224,34 +245,35 @@ function docSpec_DoDelete(req, res, next) {
 }
 
 // ---------------------------------------------------------
-//  The function makes SQL for the docSpec from the body
-//  URL : POST /docSpec/
+//  The function makes SQL for the docspec from the body
+//  URL : POST /docspec/
 //  BODY: 
 //  {
 //     "cmd": "select" or "insert" or "update or "delete",
 //     "row_count": ... ,
+//     "lodir": <catalogue for lo-* functions> ,
 //     "params": {
-//         "cSpec":...,
+//         "cspec":...,
 //         "spec":"...",
 //         "spec_en":"..."
 //      }
 //  }
 // ---------------------------------------------------------
-function docSpec_makeQuery(req, res, next) {
+function docspec_makeQuery(req, res, next) {
     if( req.body.cmd === undefined )
         return next( new Error('keyword cmd not found in the body!'));
     switch(req.body.cmd.toString().toLowerCase()) {
     case 'select':
-        docSpec_DoSelect(req, res, next);
+        docspec_DoSelect(req, res, next);
         break;
     case 'insert':
-        docSpec_DoInsert(req, res, next);
+        docspec_DoInsert(req, res, next);
         break;
     case 'update':
-        docSpec_DoUpdate(req, res, next);
+        docspec_DoUpdate(req, res, next);
         break;
     case 'delete':
-        docSpec_DoDelete(req, res, next);
+        docspec_DoDelete(req, res, next);
         break;
     default:
         return next( new Error('cmd ' + req.body.cmd + " is unknow!"));
@@ -259,7 +281,7 @@ function docSpec_makeQuery(req, res, next) {
 }
 
 
-var doc_collist_all = ['cdoc','cspec','pid','cstate','docn','docdate','docend','docauth','memo'];
+var doc_collist_all = ['cdoc','cspec','pid','cstate','docn','docdate','docend','docauth','memo','stateid'];
 function doc_HasColname(colname) {
     return (doc_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
 }
@@ -276,64 +298,61 @@ function doc_makeWhere(req, next) {
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
         if(doc_HasColname(parstr)) {
+            whereStr = makeWhere(whereStr);
             switch(parstr) {
             case 'cdoc':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " cdoc = ${" + parnext + "}";
                 }
                 break;
             case 'cspec':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " cspec = ${" + parnext + "}";
                 }
                 break;
             case 'pid':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " pid = ${" + parnext + "}";
                 }
                 break;
             case 'cstate':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " cstate = ${" + parnext + "}";
                 }
                 break;
             case 'docn':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " docn LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
                 }
                 break;
             case 'docdate':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " docdate = ${" + parnext + "}";
                 }
                 break;
             case 'docend':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " docend = ${" + parnext + "}";
                 }
                 break;
             case 'docauth':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " docauth LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
                 }
                 break;
             case 'memo':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " memo = ${" + parnext + "}";
+                }
+                break;
+            case 'stateid':
+                if(req.body.params[parnext])  {
+                    whereStr += " stateid = ${" + parnext + "}";
                 }
                 break;
             }
         } else {
-            next(new Error('column ' + parnext + " not exists in doc!"));
+            next(new Error('column ' + parnext + ' not exists in doc!'));
             return "ERROR";
         }
     }
@@ -344,7 +363,17 @@ function doc_DoSelect(req, res, next) {
     var whereStr = doc_makeWhere(req, next);
     if(whereStr == "ERROR")
         return;
-    var sqlStr = 'SELECT * FROM doc ' + whereStr;
+    var sqlStr = "SELECT cdoc" 
+                     + ",cspec" 
+                     + ",pid" 
+                     + ",cstate" 
+                     + ",docn" 
+                     + ",docdate" 
+                     + ",docend" 
+                     + ",docauth" 
+                     + ",memo" 
+                     + ",stateid"
+                     + " FROM doc " + whereStr;
     if (app.get('env') === 'development') {
         // console.log( sqlStr );
         console.log(pgp.as.format(sqlStr, req.body.params));
@@ -352,9 +381,9 @@ function doc_DoSelect(req, res, next) {
     db.any(sqlStr, req.body.params)
         .then(function (data) {
             req.dbAnswer = {
-                    status: 'success',
+                    status: "success",
                     data: data,
-                    message: 'Retrieved from doc'
+                    message: "Retrieved from doc"
             };
             return next();
         })
@@ -372,10 +401,14 @@ function doc_DoInsert(req, res, next) {
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
         if(doc_HasColname(parstr)) {
-            parList = makeList(parList);
-            parList += parstr;
-            parValues = makeList(parValues);
-            parValues += "${" + parnext + "}";
+            if(req.body.params[parnext]) {
+               parList = makeList(parList);
+               parValues = makeList(parValues);
+               parList += parstr;
+               parValues += "${" + parnext + "}";
+            } else {
+               return next(new Error('column doc.' + parnext + " has undefined value!"));
+            }
         } else {
             return next(new Error('column ' + parnext + " not exists in doc!"));
         }
@@ -412,12 +445,14 @@ function doc_DoUpdate(req, res, next) {
         if(doc_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
-        } else if(doc_HasColname(parstr)) {
-            setStr = makeSet(setStr);
-            setStr += parstr + "=${" + parnext + "}";
         } else {
-            return next(new Error('column ' + parnext + " not exists in doc!"));
-        }
+            if(doc_HasColname(parstr)) {
+                setStr = makeSet(setStr);
+                setStr += parstr + "=${" + parnext + "}";
+            } else {
+                return next(new Error('column ' + parnext + " not exists in doc!"));
+            }
+         }
     }
     if(setStr.length == 0)
         return next(new Error('not found any fields for update the doc!'));
@@ -484,16 +519,18 @@ function doc_DoDelete(req, res, next) {
 //  {
 //     "cmd": "select" or "insert" or "update or "delete",
 //     "row_count": ... ,
+//     "lodir": <catalogue for lo-* functions> ,
 //     "params": {
-//         "cDoc":...,
-//         "cSpec":...,
-//         "pId":"...",
-//         "cState":...,
-//         "docN":"...",
-//         "docDate":"...",
-//         "docEnd":"...",
-//         "docAuth":"...",
-//         "Memo":"..."
+//         "cdoc":...,
+//         "cspec":...,
+//         "pid":"...",
+//         "cstate":...,
+//         "docn":"...",
+//         "docdate":"...",
+//         "docend":"...",
+//         "docauth":"...",
+//         "memo":"...",
+//         "stateid":"..."
 //      }
 //  }
 // ---------------------------------------------------------
@@ -519,56 +556,57 @@ function doc_makeQuery(req, res, next) {
 }
 
 
-var State_collist_all = ['cstate','state','state_en'];
-function State_HasColname(colname) {
-    return (State_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
+var state_collist_all = ['cstate','state','state_en'];
+function state_HasColname(colname) {
+    return (state_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
 }
 
-var State_collist_keys = ['cstate'];
-function State_HasKeyname(keyname) {
-    return (State_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
+var state_collist_keys = ['cstate'];
+function state_HasKeyname(keyname) {
+    return (state_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
 }
 
-function State_makeWhere(req, next) {
+function state_makeWhere(req, next) {
     var whereStr = '';
     if(req.body.params === undefined)
         return whereStr;
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(State_HasColname(parstr)) {
+        if(state_HasColname(parstr)) {
+            whereStr = makeWhere(whereStr);
             switch(parstr) {
             case 'cstate':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " cstate = ${" + parnext + "}";
                 }
                 break;
             case 'state':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " state LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
                 }
                 break;
             case 'state_en':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " state_en LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
                 }
                 break;
             }
         } else {
-            next(new Error('column ' + parnext + " not exists in state!"));
+            next(new Error('column ' + parnext + ' not exists in state!'));
             return "ERROR";
         }
     }
     return whereStr;
 }
 
-function State_DoSelect(req, res, next) {
-    var whereStr = State_makeWhere(req, next);
+function state_DoSelect(req, res, next) {
+    var whereStr = state_makeWhere(req, next);
     if(whereStr == "ERROR")
         return;
-    var sqlStr = 'SELECT * FROM state ' + whereStr;
+    var sqlStr = "SELECT cstate" 
+                     + ",state" 
+                     + ",state_en"
+                     + " FROM state " + whereStr;
     if (app.get('env') === 'development') {
         // console.log( sqlStr );
         console.log(pgp.as.format(sqlStr, req.body.params));
@@ -576,9 +614,9 @@ function State_DoSelect(req, res, next) {
     db.any(sqlStr, req.body.params)
         .then(function (data) {
             req.dbAnswer = {
-                    status: 'success',
+                    status: "success",
                     data: data,
-                    message: 'Retrieved from state'
+                    message: "Retrieved from state"
             };
             return next();
         })
@@ -587,7 +625,7 @@ function State_DoSelect(req, res, next) {
     });
 }
 
-function State_DoInsert(req, res, next) {
+function state_DoInsert(req, res, next) {
     if(req.body.params === undefined) {
         return next( new Error('insert params not found!'));
     }
@@ -595,11 +633,15 @@ function State_DoInsert(req, res, next) {
     var parValues = '';
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(State_HasColname(parstr)) {
-            parList = makeList(parList);
-            parList += parstr;
-            parValues = makeList(parValues);
-            parValues += "${" + parnext + "}";
+        if(state_HasColname(parstr)) {
+            if(req.body.params[parnext]) {
+               parList = makeList(parList);
+               parValues = makeList(parValues);
+               parList += parstr;
+               parValues += "${" + parnext + "}";
+            } else {
+               return next(new Error('column state.' + parnext + " has undefined value!"));
+            }
         } else {
             return next(new Error('column ' + parnext + " not exists in state!"));
         }
@@ -625,7 +667,7 @@ function State_DoInsert(req, res, next) {
     });
 }
 
-function State_DoUpdate(req, res, next) {
+function state_DoUpdate(req, res, next) {
     if(req.body.params === undefined) {
         return next( new Error('update params not found!'));
     }
@@ -633,15 +675,17 @@ function State_DoUpdate(req, res, next) {
     var whereStr = '';
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(State_HasKeyname(parstr)) {
+        if(state_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
-        } else if(State_HasColname(parstr)) {
-            setStr = makeSet(setStr);
-            setStr += parstr + "=${" + parnext + "}";
         } else {
-            return next(new Error('column ' + parnext + " not exists in state!"));
-        }
+            if(state_HasColname(parstr)) {
+                setStr = makeSet(setStr);
+                setStr += parstr + "=${" + parnext + "}";
+            } else {
+                return next(new Error('column ' + parnext + " not exists in state!"));
+            }
+         }
     }
     if(setStr.length == 0)
         return next(new Error('not found any fields for update the state!'));
@@ -665,14 +709,14 @@ function State_DoUpdate(req, res, next) {
     });
 }
 
-function State_DoDelete(req, res, next) {
+function state_DoDelete(req, res, next) {
     if(req.body.params === undefined) {
         return next( new Error('delete params not found!'));
     }
     var whereStr = '';
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(State_HasKeyname(parstr)) {
+        if(state_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
         } else {
@@ -702,34 +746,35 @@ function State_DoDelete(req, res, next) {
 }
 
 // ---------------------------------------------------------
-//  The function makes SQL for the State from the body
-//  URL : POST /State/
+//  The function makes SQL for the state from the body
+//  URL : POST /state/
 //  BODY: 
 //  {
 //     "cmd": "select" or "insert" or "update or "delete",
 //     "row_count": ... ,
+//     "lodir": <catalogue for lo-* functions> ,
 //     "params": {
-//         "cState":...,
-//         "State":"...",
-//         "State_en":"..."
+//         "cstate":...,
+//         "state":"...",
+//         "state_en":"..."
 //      }
 //  }
 // ---------------------------------------------------------
-function State_makeQuery(req, res, next) {
+function state_makeQuery(req, res, next) {
     if( req.body.cmd === undefined )
         return next( new Error('keyword cmd not found in the body!'));
     switch(req.body.cmd.toString().toLowerCase()) {
     case 'select':
-        State_DoSelect(req, res, next);
+        state_DoSelect(req, res, next);
         break;
     case 'insert':
-        State_DoInsert(req, res, next);
+        state_DoInsert(req, res, next);
         break;
     case 'update':
-        State_DoUpdate(req, res, next);
+        state_DoUpdate(req, res, next);
         break;
     case 'delete':
-        State_DoDelete(req, res, next);
+        state_DoDelete(req, res, next);
         break;
     default:
         return next( new Error('cmd ' + req.body.cmd + " is unknow!"));
@@ -737,7 +782,7 @@ function State_makeQuery(req, res, next) {
 }
 
 
-var person_collist_all = ['pid','cstate','shortname','fullname','legalname','borndate','sexid'];
+var person_collist_all = ['pid','cstate','shortname','fullname','legalname','borndate','preview','sexid'];
 function person_HasColname(colname) {
     return (person_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
 }
@@ -747,6 +792,11 @@ function person_HasKeyname(keyname) {
     return (person_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
 }
 
+var person_collist_oids = ['preview'];
+function person_HasOID(oidname) {
+    return (person_collist_oids.indexOf(oidname.toString().toLowerCase()) > -1);
+}
+
 function person_makeWhere(req, next) {
     var whereStr = '';
     if(req.body.params === undefined)
@@ -754,52 +804,51 @@ function person_makeWhere(req, next) {
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
         if(person_HasColname(parstr)) {
+            whereStr = makeWhere(whereStr);
             switch(parstr) {
             case 'pid':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " pid = ${" + parnext + "}";
                 }
                 break;
             case 'cstate':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " cstate = ${" + parnext + "}";
                 }
                 break;
             case 'shortname':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " shortname LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
                 }
                 break;
             case 'fullname':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " fullname LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
                 }
                 break;
             case 'legalname':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " legalname LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
                 }
                 break;
             case 'borndate':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " borndate = ${" + parnext + "}";
+                }
+                break;
+            case 'preview':
+                if(req.body.params[parnext])  {
+                    whereStr += " preview = ${" + parnext + "}";
                 }
                 break;
             case 'sexid':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " sexid = ${" + parnext + "}";
                 }
                 break;
             }
         } else {
-            next(new Error('column ' + parnext + " not exists in person!"));
+            next(new Error('column ' + parnext + ' not exists in person!'));
             return "ERROR";
         }
     }
@@ -807,10 +856,24 @@ function person_makeWhere(req, next) {
 }
 
 function person_DoSelect(req, res, next) {
+   var lodir = getLoDir(req, next);
+   if (app.get('env') === 'development')
+      console.log("lodir is " + lodir);
+   if(lodir == "ERROR")
+      return;
     var whereStr = person_makeWhere(req, next);
     if(whereStr == "ERROR")
         return;
-    var sqlStr = 'SELECT * FROM person ' + whereStr;
+    var sqlStr = "SELECT pid" 
+                     + ",cstate" 
+                     + ",shortname" 
+                     + ",fullname" 
+                     + ",legalname" 
+                     + ",borndate" 
+                     + ",lo_export(preview,'" + lodir + "' || preview)"
+                     + ",'" + lodir + "' || preview as preview_loexport" 
+                     + ",sexid"
+                     + " FROM person " + whereStr;
     if (app.get('env') === 'development') {
         // console.log( sqlStr );
         console.log(pgp.as.format(sqlStr, req.body.params));
@@ -818,9 +881,9 @@ function person_DoSelect(req, res, next) {
     db.any(sqlStr, req.body.params)
         .then(function (data) {
             req.dbAnswer = {
-                    status: 'success',
+                    status: "success",
                     data: data,
-                    message: 'Retrieved from person'
+                    message: "Retrieved from person"
             };
             return next();
         })
@@ -838,25 +901,34 @@ function person_DoInsert(req, res, next) {
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
         if(person_HasColname(parstr)) {
-            parList = makeList(parList);
-            parList += parstr;
-            parValues = makeList(parValues);
-            parValues += "${" + parnext + "}";
+            if(req.body.params[parnext]) {
+               parList = makeList(parList);
+               parValues = makeList(parValues);
+               parList += parstr;
+               if(person_HasOID(parstr)) {
+                  parValues += " lo_import('" + req.body.params[parnext] + "')";
+               } else {
+                  parValues += "${" + parnext + "}";
+               }
+            } else {
+               return next(new Error('column person.' + parnext + " has undefined value!"));
+            }
         } else {
             return next(new Error('column ' + parnext + " not exists in person!"));
         }
     }
     if(parList.length == 0)
         return next(new Error('not found any fields for insert into person!'));
-    var sqlStr = "INSERT INTO person(" + parList + ") VALUES (" + parValues + ")";
+    var sqlStr = "INSERT INTO person(" + parList + ") VALUES (" + parValues + ") RETURNING preview";
     if (app.get('env') === 'development') {
        // console.log( sqlStr );
        console.log(pgp.as.format(sqlStr, req.body.params));
     }
-    db.none(sqlStr, req.body.params)
-        .then(function () {
+    db.one(sqlStr, req.body.params)
+        .then(function (data) {
             req.dbAnswer = {
                     status: 'success',
+                    data: data,
                     message: 'Inserted into person'
                 };
             return next();
@@ -877,12 +949,18 @@ function person_DoUpdate(req, res, next) {
         if(person_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
-        } else if(person_HasColname(parstr)) {
-            setStr = makeSet(setStr);
-            setStr += parstr + "=${" + parnext + "}";
         } else {
-            return next(new Error('column ' + parnext + " not exists in person!"));
-        }
+            if(person_HasColname(parstr)) {
+                setStr = makeSet(setStr);
+                if(person_HasOID(parstr)) {
+                   setStr += parstr + "=lo_import('" + req.body.params[parnext] + "')";
+                } else {
+                   setStr += parstr + "=${" + parnext + "}";
+                }
+            } else {
+                return next(new Error('column ' + parnext + " not exists in person!"));
+            }
+         }
     }
     if(setStr.length == 0)
         return next(new Error('not found any fields for update the person!'));
@@ -949,14 +1027,16 @@ function person_DoDelete(req, res, next) {
 //  {
 //     "cmd": "select" or "insert" or "update or "delete",
 //     "row_count": ... ,
+//     "lodir": <catalogue for lo-* functions> ,
 //     "params": {
-//         "pId":"...",
-//         "cState":...,
-//         "shortName":"...",
-//         "fullName":"...",
-//         "legalName":"...",
-//         "bornDate":"...",
-//         "sexId":"..."
+//         "pid":"...",
+//         "cstate":...,
+//         "shortname":"...",
+//         "fullname":"...",
+//         "legalname":"...",
+//         "borndate":"...",
+//         "preview":"...",
+//         "sexid":"..."
 //      }
 //  }
 // ---------------------------------------------------------
@@ -982,56 +1062,111 @@ function person_makeQuery(req, res, next) {
 }
 
 
-var photoData_collist_all = ['pid','cphoto','photo'];
-function photoData_HasColname(colname) {
-    return (photoData_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
+var photodata_collist_all = ['cphoto','pho_cphoto','pid','ckindphoto','phmoment','imgno','geoloc','photovec','imageid','preview'];
+function photodata_HasColname(colname) {
+    return (photodata_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
 }
 
-var photoData_collist_keys = ['pid'];
-function photoData_HasKeyname(keyname) {
-    return (photoData_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
+var photodata_collist_keys = ['cphoto'];
+function photodata_HasKeyname(keyname) {
+    return (photodata_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
 }
 
-function photoData_makeWhere(req, next) {
+var photodata_collist_oids = ['imageid','preview'];
+function photodata_HasOID(oidname) {
+    return (photodata_collist_oids.indexOf(oidname.toString().toLowerCase()) > -1);
+}
+
+function photodata_makeWhere(req, next) {
     var whereStr = '';
     if(req.body.params === undefined)
         return whereStr;
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(photoData_HasColname(parstr)) {
+        if(photodata_HasColname(parstr)) {
+            whereStr = makeWhere(whereStr);
             switch(parstr) {
-            case 'pid':
-                if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
-                    whereStr += " pid = ${" + parnext + "}";
-                }
-                break;
             case 'cphoto':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " cphoto = ${" + parnext + "}";
                 }
                 break;
-            case 'photo':
+            case 'pho_cphoto':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
-                    whereStr += " photo LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
+                    whereStr += " pho_cphoto = ${" + parnext + "}";
+                }
+                break;
+            case 'pid':
+                if(req.body.params[parnext])  {
+                    whereStr += " pid = ${" + parnext + "}";
+                }
+                break;
+            case 'ckindphoto':
+                if(req.body.params[parnext])  {
+                    whereStr += " ckindphoto = ${" + parnext + "}";
+                }
+                break;
+            case 'phmoment':
+                if(req.body.params[parnext])  {
+                    whereStr += " phmoment = ${" + parnext + "}";
+                }
+                break;
+            case 'imgno':
+                if(req.body.params[parnext])  {
+                    whereStr += " imgno = ${" + parnext + "}";
+                }
+                break;
+            case 'geoloc':
+                if(req.body.params[parnext])  {
+                    whereStr += " geoloc = ${" + parnext + "}";
+                }
+                break;
+            case 'photovec':
+                if(req.body.params[parnext])  {
+                    whereStr += " photovec = ${" + parnext + "}";
+                }
+                break;
+            case 'imageid':
+                if(req.body.params[parnext])  {
+                    whereStr += " imageid = ${" + parnext + "}";
+                }
+                break;
+            case 'preview':
+                if(req.body.params[parnext])  {
+                    whereStr += " preview = ${" + parnext + "}";
                 }
                 break;
             }
         } else {
-            next(new Error('column ' + parnext + " not exists in photodata!"));
+            next(new Error('column ' + parnext + ' not exists in photodata!'));
             return "ERROR";
         }
     }
     return whereStr;
 }
 
-function photoData_DoSelect(req, res, next) {
-    var whereStr = photoData_makeWhere(req, next);
+function photodata_DoSelect(req, res, next) {
+   var lodir = getLoDir(req, next);
+   if (app.get('env') === 'development')
+      console.log("lodir is " + lodir);
+   if(lodir == "ERROR")
+      return;
+    var whereStr = photodata_makeWhere(req, next);
     if(whereStr == "ERROR")
         return;
-    var sqlStr = 'SELECT * FROM photodata ' + whereStr;
+    var sqlStr = "SELECT cphoto" 
+                     + ",pho_cphoto" 
+                     + ",pid" 
+                     + ",ckindphoto" 
+                     + ",phmoment" 
+                     + ",imgno" 
+                     + ",geoloc" 
+                     + ",photovec" 
+                     + ",lo_export(imageid,'" + lodir + "' || imageid)"
+                     + ",'" + lodir + "' || imageid as imageid_loexport" 
+                     + ",lo_export(preview,'" + lodir + "' || preview)"
+                     + ",'" + lodir + "' || preview as preview_loexport"
+                     + " FROM photodata " + whereStr;
     if (app.get('env') === 'development') {
         // console.log( sqlStr );
         console.log(pgp.as.format(sqlStr, req.body.params));
@@ -1039,9 +1174,9 @@ function photoData_DoSelect(req, res, next) {
     db.any(sqlStr, req.body.params)
         .then(function (data) {
             req.dbAnswer = {
-                    status: 'success',
+                    status: "success",
                     data: data,
-                    message: 'Retrieved from photodata'
+                    message: "Retrieved from photodata"
             };
             return next();
         })
@@ -1050,7 +1185,7 @@ function photoData_DoSelect(req, res, next) {
     });
 }
 
-function photoData_DoInsert(req, res, next) {
+function photodata_DoInsert(req, res, next) {
     if(req.body.params === undefined) {
         return next( new Error('insert params not found!'));
     }
@@ -1058,26 +1193,35 @@ function photoData_DoInsert(req, res, next) {
     var parValues = '';
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(photoData_HasColname(parstr)) {
-            parList = makeList(parList);
-            parList += parstr;
-            parValues = makeList(parValues);
-            parValues += "${" + parnext + "}";
+        if(photodata_HasColname(parstr)) {
+            if(req.body.params[parnext]) {
+               parList = makeList(parList);
+               parValues = makeList(parValues);
+               parList += parstr;
+               if(photodata_HasOID(parstr)) {
+                  parValues += " lo_import('" + req.body.params[parnext] + "')";
+               } else {
+                  parValues += "${" + parnext + "}";
+               }
+            } else {
+               return next(new Error('column photodata.' + parnext + " has undefined value!"));
+            }
         } else {
             return next(new Error('column ' + parnext + " not exists in photodata!"));
         }
     }
     if(parList.length == 0)
         return next(new Error('not found any fields for insert into photodata!'));
-    var sqlStr = "INSERT INTO photodata(" + parList + ") VALUES (" + parValues + ")";
+    var sqlStr = "INSERT INTO photodata(" + parList + ") VALUES (" + parValues + ") RETURNING cphoto, imageid, preview";
     if (app.get('env') === 'development') {
        // console.log( sqlStr );
        console.log(pgp.as.format(sqlStr, req.body.params));
     }
-    db.none(sqlStr, req.body.params)
-        .then(function () {
+    db.one(sqlStr, req.body.params)
+        .then(function (data) {
             req.dbAnswer = {
                     status: 'success',
+                    data: data,
                     message: 'Inserted into photodata'
                 };
             return next();
@@ -1087,7 +1231,7 @@ function photoData_DoInsert(req, res, next) {
     });
 }
 
-function photoData_DoUpdate(req, res, next) {
+function photodata_DoUpdate(req, res, next) {
     if(req.body.params === undefined) {
         return next( new Error('update params not found!'));
     }
@@ -1095,15 +1239,21 @@ function photoData_DoUpdate(req, res, next) {
     var whereStr = '';
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(photoData_HasKeyname(parstr)) {
+        if(photodata_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
-        } else if(photoData_HasColname(parstr)) {
-            setStr = makeSet(setStr);
-            setStr += parstr + "=${" + parnext + "}";
         } else {
-            return next(new Error('column ' + parnext + " not exists in photodata!"));
-        }
+            if(photodata_HasColname(parstr)) {
+                setStr = makeSet(setStr);
+                if(photodata_HasOID(parstr)) {
+                   setStr += parstr + "=lo_import('" + req.body.params[parnext] + "')";
+                } else {
+                   setStr += parstr + "=${" + parnext + "}";
+                }
+            } else {
+                return next(new Error('column ' + parnext + " not exists in photodata!"));
+            }
+         }
     }
     if(setStr.length == 0)
         return next(new Error('not found any fields for update the photodata!'));
@@ -1127,14 +1277,14 @@ function photoData_DoUpdate(req, res, next) {
     });
 }
 
-function photoData_DoDelete(req, res, next) {
+function photodata_DoDelete(req, res, next) {
     if(req.body.params === undefined) {
         return next( new Error('delete params not found!'));
     }
     var whereStr = '';
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(photoData_HasKeyname(parstr)) {
+        if(photodata_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
         } else {
@@ -1164,34 +1314,42 @@ function photoData_DoDelete(req, res, next) {
 }
 
 // ---------------------------------------------------------
-//  The function makes SQL for the photoData from the body
-//  URL : POST /photoData/
+//  The function makes SQL for the photodata from the body
+//  URL : POST /photodata/
 //  BODY: 
 //  {
 //     "cmd": "select" or "insert" or "update or "delete",
 //     "row_count": ... ,
+//     "lodir": <catalogue for lo-* functions> ,
 //     "params": {
-//         "pId":"...",
-//         "cPhoto":...,
-//         "photo":"..."
+//         "cphoto":...,
+//         "pho_cphoto":...,
+//         "pid":"...",
+//         "ckindphoto":...,
+//         "phmoment":"...",
+//         "imgno":...,
+//         "geoloc":"...",
+//         "photovec":"...",
+//         "imageid":"...",
+//         "preview":"..."
 //      }
 //  }
 // ---------------------------------------------------------
-function photoData_makeQuery(req, res, next) {
+function photodata_makeQuery(req, res, next) {
     if( req.body.cmd === undefined )
         return next( new Error('keyword cmd not found in the body!'));
     switch(req.body.cmd.toString().toLowerCase()) {
     case 'select':
-        photoData_DoSelect(req, res, next);
+        photodata_DoSelect(req, res, next);
         break;
     case 'insert':
-        photoData_DoInsert(req, res, next);
+        photodata_DoInsert(req, res, next);
         break;
     case 'update':
-        photoData_DoUpdate(req, res, next);
+        photodata_DoUpdate(req, res, next);
         break;
     case 'delete':
-        photoData_DoDelete(req, res, next);
+        photodata_DoDelete(req, res, next);
         break;
     default:
         return next( new Error('cmd ' + req.body.cmd + " is unknow!"));
@@ -1199,50 +1357,51 @@ function photoData_makeQuery(req, res, next) {
 }
 
 
-var photoSpec_collist_all = ['cphoto','photospec'];
-function photoSpec_HasColname(colname) {
-    return (photoSpec_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
+var photospec_collist_all = ['ckindphoto','photospec'];
+function photospec_HasColname(colname) {
+    return (photospec_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
 }
 
-var photoSpec_collist_keys = ['cphoto'];
-function photoSpec_HasKeyname(keyname) {
-    return (photoSpec_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
+var photospec_collist_keys = ['ckindphoto'];
+function photospec_HasKeyname(keyname) {
+    return (photospec_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
 }
 
-function photoSpec_makeWhere(req, next) {
+function photospec_makeWhere(req, next) {
     var whereStr = '';
     if(req.body.params === undefined)
         return whereStr;
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(photoSpec_HasColname(parstr)) {
+        if(photospec_HasColname(parstr)) {
+            whereStr = makeWhere(whereStr);
             switch(parstr) {
-            case 'cphoto':
+            case 'ckindphoto':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
-                    whereStr += " cphoto = ${" + parnext + "}";
+                    whereStr += " ckindphoto = ${" + parnext + "}";
                 }
                 break;
             case 'photospec':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " photospec LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
                 }
                 break;
             }
         } else {
-            next(new Error('column ' + parnext + " not exists in photospec!"));
+            next(new Error('column ' + parnext + ' not exists in photospec!'));
             return "ERROR";
         }
     }
     return whereStr;
 }
 
-function photoSpec_DoSelect(req, res, next) {
-    var whereStr = photoSpec_makeWhere(req, next);
+function photospec_DoSelect(req, res, next) {
+    var whereStr = photospec_makeWhere(req, next);
     if(whereStr == "ERROR")
         return;
-    var sqlStr = 'SELECT * FROM photospec ' + whereStr;
+    var sqlStr = "SELECT ckindphoto" 
+                     + ",photospec"
+                     + " FROM photospec " + whereStr;
     if (app.get('env') === 'development') {
         // console.log( sqlStr );
         console.log(pgp.as.format(sqlStr, req.body.params));
@@ -1250,9 +1409,9 @@ function photoSpec_DoSelect(req, res, next) {
     db.any(sqlStr, req.body.params)
         .then(function (data) {
             req.dbAnswer = {
-                    status: 'success',
+                    status: "success",
                     data: data,
-                    message: 'Retrieved from photospec'
+                    message: "Retrieved from photospec"
             };
             return next();
         })
@@ -1261,7 +1420,7 @@ function photoSpec_DoSelect(req, res, next) {
     });
 }
 
-function photoSpec_DoInsert(req, res, next) {
+function photospec_DoInsert(req, res, next) {
     if(req.body.params === undefined) {
         return next( new Error('insert params not found!'));
     }
@@ -1269,18 +1428,22 @@ function photoSpec_DoInsert(req, res, next) {
     var parValues = '';
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(photoSpec_HasColname(parstr)) {
-            parList = makeList(parList);
-            parList += parstr;
-            parValues = makeList(parValues);
-            parValues += "${" + parnext + "}";
+        if(photospec_HasColname(parstr)) {
+            if(req.body.params[parnext]) {
+               parList = makeList(parList);
+               parValues = makeList(parValues);
+               parList += parstr;
+               parValues += "${" + parnext + "}";
+            } else {
+               return next(new Error('column photospec.' + parnext + " has undefined value!"));
+            }
         } else {
             return next(new Error('column ' + parnext + " not exists in photospec!"));
         }
     }
     if(parList.length == 0)
         return next(new Error('not found any fields for insert into photospec!'));
-    var sqlStr = "INSERT INTO photospec(" + parList + ") VALUES (" + parValues + ") RETURNING cphoto";
+    var sqlStr = "INSERT INTO photospec(" + parList + ") VALUES (" + parValues + ") RETURNING ckindphoto";
     if (app.get('env') === 'development') {
        // console.log( sqlStr );
        console.log(pgp.as.format(sqlStr, req.body.params));
@@ -1299,7 +1462,7 @@ function photoSpec_DoInsert(req, res, next) {
     });
 }
 
-function photoSpec_DoUpdate(req, res, next) {
+function photospec_DoUpdate(req, res, next) {
     if(req.body.params === undefined) {
         return next( new Error('update params not found!'));
     }
@@ -1307,15 +1470,17 @@ function photoSpec_DoUpdate(req, res, next) {
     var whereStr = '';
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(photoSpec_HasKeyname(parstr)) {
+        if(photospec_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
-        } else if(photoSpec_HasColname(parstr)) {
-            setStr = makeSet(setStr);
-            setStr += parstr + "=${" + parnext + "}";
         } else {
-            return next(new Error('column ' + parnext + " not exists in photospec!"));
-        }
+            if(photospec_HasColname(parstr)) {
+                setStr = makeSet(setStr);
+                setStr += parstr + "=${" + parnext + "}";
+            } else {
+                return next(new Error('column ' + parnext + " not exists in photospec!"));
+            }
+         }
     }
     if(setStr.length == 0)
         return next(new Error('not found any fields for update the photospec!'));
@@ -1339,14 +1504,14 @@ function photoSpec_DoUpdate(req, res, next) {
     });
 }
 
-function photoSpec_DoDelete(req, res, next) {
+function photospec_DoDelete(req, res, next) {
     if(req.body.params === undefined) {
         return next( new Error('delete params not found!'));
     }
     var whereStr = '';
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(photoSpec_HasKeyname(parstr)) {
+        if(photospec_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
         } else {
@@ -1376,33 +1541,34 @@ function photoSpec_DoDelete(req, res, next) {
 }
 
 // ---------------------------------------------------------
-//  The function makes SQL for the photoSpec from the body
-//  URL : POST /photoSpec/
+//  The function makes SQL for the photospec from the body
+//  URL : POST /photospec/
 //  BODY: 
 //  {
 //     "cmd": "select" or "insert" or "update or "delete",
 //     "row_count": ... ,
+//     "lodir": <catalogue for lo-* functions> ,
 //     "params": {
-//         "cPhoto":...,
-//         "photoSpec":"..."
+//         "ckindphoto":...,
+//         "photospec":"..."
 //      }
 //  }
 // ---------------------------------------------------------
-function photoSpec_makeQuery(req, res, next) {
+function photospec_makeQuery(req, res, next) {
     if( req.body.cmd === undefined )
         return next( new Error('keyword cmd not found in the body!'));
     switch(req.body.cmd.toString().toLowerCase()) {
     case 'select':
-        photoSpec_DoSelect(req, res, next);
+        photospec_DoSelect(req, res, next);
         break;
     case 'insert':
-        photoSpec_DoInsert(req, res, next);
+        photospec_DoInsert(req, res, next);
         break;
     case 'update':
-        photoSpec_DoUpdate(req, res, next);
+        photospec_DoUpdate(req, res, next);
         break;
     case 'delete':
-        photoSpec_DoDelete(req, res, next);
+        photospec_DoDelete(req, res, next);
         break;
     default:
         return next( new Error('cmd ' + req.body.cmd + " is unknow!"));
@@ -1410,62 +1576,75 @@ function photoSpec_makeQuery(req, res, next) {
 }
 
 
-var audioDatа_collist_all = ['pid','audiofull','audiomemo','memo'];
-function audioDatа_HasColname(colname) {
-    return (audioDatа_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
+var audiodata_collist_all = ['pid','audiofull','audiomemo','memo'];
+function audiodata_HasColname(colname) {
+    return (audiodata_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
 }
 
-var audioDatа_collist_keys = ['pid'];
-function audioDatа_HasKeyname(keyname) {
-    return (audioDatа_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
+var audiodata_collist_keys = [];
+function audiodata_HasKeyname(keyname) {
+    return (audiodata_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
 }
 
-function audioDatа_makeWhere(req, next) {
+var audiodata_collist_oids = ['audiofull','audiomemo'];
+function audiodata_HasOID(oidname) {
+    return (audiodata_collist_oids.indexOf(oidname.toString().toLowerCase()) > -1);
+}
+
+function audiodata_makeWhere(req, next) {
     var whereStr = '';
     if(req.body.params === undefined)
         return whereStr;
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(audioDatа_HasColname(parstr)) {
+        if(audiodata_HasColname(parstr)) {
+            whereStr = makeWhere(whereStr);
             switch(parstr) {
             case 'pid':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " pid = ${" + parnext + "}";
                 }
                 break;
             case 'audiofull':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
-                    whereStr += " audiofull LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
+                    whereStr += " audiofull = ${" + parnext + "}";
                 }
                 break;
             case 'audiomemo':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
-                    whereStr += " audiomemo LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
+                    whereStr += " audiomemo = ${" + parnext + "}";
                 }
                 break;
             case 'memo':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " memo = ${" + parnext + "}";
                 }
                 break;
             }
         } else {
-            next(new Error('column ' + parnext + " not exists in audiodatа!"));
+            next(new Error('column ' + parnext + ' not exists in audiodata!'));
             return "ERROR";
         }
     }
     return whereStr;
 }
 
-function audioDatа_DoSelect(req, res, next) {
-    var whereStr = audioDatа_makeWhere(req, next);
+function audiodata_DoSelect(req, res, next) {
+   var lodir = getLoDir(req, next);
+   if (app.get('env') === 'development')
+      console.log("lodir is " + lodir);
+   if(lodir == "ERROR")
+      return;
+    var whereStr = audiodata_makeWhere(req, next);
     if(whereStr == "ERROR")
         return;
-    var sqlStr = 'SELECT * FROM audiodatа ' + whereStr;
+    var sqlStr = "SELECT pid" 
+                     + ",lo_export(audiofull,'" + lodir + "' || audiofull)"
+                     + ",'" + lodir + "' || audiofull as audiofull_loexport" 
+                     + ",lo_export(audiomemo,'" + lodir + "' || audiomemo)"
+                     + ",'" + lodir + "' || audiomemo as audiomemo_loexport" 
+                     + ",memo"
+                     + " FROM audiodata " + whereStr;
     if (app.get('env') === 'development') {
         // console.log( sqlStr );
         console.log(pgp.as.format(sqlStr, req.body.params));
@@ -1473,9 +1652,9 @@ function audioDatа_DoSelect(req, res, next) {
     db.any(sqlStr, req.body.params)
         .then(function (data) {
             req.dbAnswer = {
-                    status: 'success',
+                    status: "success",
                     data: data,
-                    message: 'Retrieved from audiodatа'
+                    message: "Retrieved from audiodata"
             };
             return next();
         })
@@ -1484,7 +1663,7 @@ function audioDatа_DoSelect(req, res, next) {
     });
 }
 
-function audioDatа_DoInsert(req, res, next) {
+function audiodata_DoInsert(req, res, next) {
     if(req.body.params === undefined) {
         return next( new Error('insert params not found!'));
     }
@@ -1492,27 +1671,36 @@ function audioDatа_DoInsert(req, res, next) {
     var parValues = '';
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(audioDatа_HasColname(parstr)) {
-            parList = makeList(parList);
-            parList += parstr;
-            parValues = makeList(parValues);
-            parValues += "${" + parnext + "}";
+        if(audiodata_HasColname(parstr)) {
+            if(req.body.params[parnext]) {
+               parList = makeList(parList);
+               parValues = makeList(parValues);
+               parList += parstr;
+               if(audiodata_HasOID(parstr)) {
+                  parValues += " lo_import('" + req.body.params[parnext] + "')";
+               } else {
+                  parValues += "${" + parnext + "}";
+               }
+            } else {
+               return next(new Error('column audiodata.' + parnext + " has undefined value!"));
+            }
         } else {
-            return next(new Error('column ' + parnext + " not exists in audiodatа!"));
+            return next(new Error('column ' + parnext + " not exists in audiodata!"));
         }
     }
     if(parList.length == 0)
-        return next(new Error('not found any fields for insert into audiodatа!'));
-    var sqlStr = "INSERT INTO audiodatа(" + parList + ") VALUES (" + parValues + ")";
+        return next(new Error('not found any fields for insert into audiodata!'));
+    var sqlStr = "INSERT INTO audiodata(" + parList + ") VALUES (" + parValues + ") RETURNING audiofull, audiomemo";
     if (app.get('env') === 'development') {
        // console.log( sqlStr );
        console.log(pgp.as.format(sqlStr, req.body.params));
     }
-    db.none(sqlStr, req.body.params)
-        .then(function () {
+    db.one(sqlStr, req.body.params)
+        .then(function (data) {
             req.dbAnswer = {
                     status: 'success',
-                    message: 'Inserted into audiodatа'
+                    data: data,
+                    message: 'Inserted into audiodata'
                 };
             return next();
         })
@@ -1521,7 +1709,7 @@ function audioDatа_DoInsert(req, res, next) {
     });
 }
 
-function audioDatа_DoUpdate(req, res, next) {
+function audiodata_DoUpdate(req, res, next) {
     if(req.body.params === undefined) {
         return next( new Error('update params not found!'));
     }
@@ -1529,21 +1717,27 @@ function audioDatа_DoUpdate(req, res, next) {
     var whereStr = '';
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(audioDatа_HasKeyname(parstr)) {
+        if(audiodata_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
-        } else if(audioDatа_HasColname(parstr)) {
-            setStr = makeSet(setStr);
-            setStr += parstr + "=${" + parnext + "}";
         } else {
-            return next(new Error('column ' + parnext + " not exists in audiodatа!"));
-        }
+            if(audiodata_HasColname(parstr)) {
+                setStr = makeSet(setStr);
+                if(audiodata_HasOID(parstr)) {
+                   setStr += parstr + "=lo_import('" + req.body.params[parnext] + "')";
+                } else {
+                   setStr += parstr + "=${" + parnext + "}";
+                }
+            } else {
+                return next(new Error('column ' + parnext + " not exists in audiodata!"));
+            }
+         }
     }
     if(setStr.length == 0)
-        return next(new Error('not found any fields for update the audiodatа!'));
+        return next(new Error('not found any fields for update the audiodata!'));
     if(whereStr.length == 0)
-        return next(new Error('not found any keys for update the audiodatа!'));
-    var sqlStr = "UPDATE audiodatа " + setStr + " " + whereStr;
+        return next(new Error('not found any keys for update the audiodata!'));
+    var sqlStr = "UPDATE audiodata " + setStr + " " + whereStr;
     if (app.get('env') === 'development') {
         // console.log( sqlStr );
         console.log(pgp.as.format(sqlStr, req.body.params));
@@ -1552,7 +1746,7 @@ function audioDatа_DoUpdate(req, res, next) {
         .then(function (result) {
             req.dbAnswer = {
                     status: 'success',
-                    message: `Updated ${result.rowCount} from audiodatа`
+                    message: `Updated ${result.rowCount} from audiodata`
                 };
             return next();
         })
@@ -1561,23 +1755,23 @@ function audioDatа_DoUpdate(req, res, next) {
     });
 }
 
-function audioDatа_DoDelete(req, res, next) {
+function audiodata_DoDelete(req, res, next) {
     if(req.body.params === undefined) {
         return next( new Error('delete params not found!'));
     }
     var whereStr = '';
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(audioDatа_HasKeyname(parstr)) {
+        if(audiodata_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
         } else {
-            return next(new Error('column ' + parnext + " is not key columns in audiodatа!"));
+            return next(new Error('column ' + parnext + " is not key columns in audiodata!"));
         }
     }
     if(whereStr.length == 0)
-        return next(new Error('not found any keys for delete from the audiodatа!'));
-    var sqlStr = "DELETE FROM audiodatа " + whereStr;
+        return next(new Error('not found any keys for delete from the audiodata!'));
+    var sqlStr = "DELETE FROM audiodata " + whereStr;
     if (app.get('env') === 'development') {
         // console.log( sqlStr );
         console.log(pgp.as.format(sqlStr, req.body.params));
@@ -1587,7 +1781,7 @@ function audioDatа_DoDelete(req, res, next) {
             /* jshint ignore:start */
             req.dbAnswer = {
                     status: 'success',
-                    message: `Removed ${result.rowCount} from audiodatа`
+                    message: `Removed ${result.rowCount} from audiodata`
             };
             /* jshint ignore:end */
             return next();
@@ -1598,35 +1792,36 @@ function audioDatа_DoDelete(req, res, next) {
 }
 
 // ---------------------------------------------------------
-//  The function makes SQL for the audioDatа from the body
-//  URL : POST /audioDatа/
+//  The function makes SQL for the audiodata from the body
+//  URL : POST /audiodata/
 //  BODY: 
 //  {
 //     "cmd": "select" or "insert" or "update or "delete",
 //     "row_count": ... ,
+//     "lodir": <catalogue for lo-* functions> ,
 //     "params": {
-//         "pId":"...",
-//         "audioFull":"...",
-//         "audioMemo":"...",
-//         "Memo":"..."
+//         "pid":"...",
+//         "audiofull":"...",
+//         "audiomemo":"...",
+//         "memo":"..."
 //      }
 //  }
 // ---------------------------------------------------------
-function audioDatа_makeQuery(req, res, next) {
+function audiodata_makeQuery(req, res, next) {
     if( req.body.cmd === undefined )
         return next( new Error('keyword cmd not found in the body!'));
     switch(req.body.cmd.toString().toLowerCase()) {
     case 'select':
-        audioDatа_DoSelect(req, res, next);
+        audiodata_DoSelect(req, res, next);
         break;
     case 'insert':
-        audioDatа_DoInsert(req, res, next);
+        audiodata_DoInsert(req, res, next);
         break;
     case 'update':
-        audioDatа_DoUpdate(req, res, next);
+        audiodata_DoUpdate(req, res, next);
         break;
     case 'delete':
-        audioDatа_DoDelete(req, res, next);
+        audiodata_DoDelete(req, res, next);
         break;
     default:
         return next( new Error('cmd ' + req.body.cmd + " is unknow!"));
@@ -1651,58 +1846,51 @@ function operator_makeWhere(req, next) {
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
         if(operator_HasColname(parstr)) {
+            whereStr = makeWhere(whereStr);
             switch(parstr) {
             case 'coper':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " coper = ${" + parnext + "}";
                 }
                 break;
             case 'crule':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " crule = ${" + parnext + "}";
                 }
                 break;
             case 'cpoint':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " cpoint = ${" + parnext + "}";
                 }
                 break;
             case 'stuff':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " stuff LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
                 }
                 break;
             case 'stuff_en':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " stuff_en LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
                 }
                 break;
             case 'key':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " key LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
                 }
                 break;
             case 'phrase':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " phrase LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
                 }
                 break;
             case 'stateid':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " stateid = ${" + parnext + "}";
                 }
                 break;
             }
         } else {
-            next(new Error('column ' + parnext + " not exists in operator!"));
+            next(new Error('column ' + parnext + ' not exists in operator!'));
             return "ERROR";
         }
     }
@@ -1713,7 +1901,15 @@ function operator_DoSelect(req, res, next) {
     var whereStr = operator_makeWhere(req, next);
     if(whereStr == "ERROR")
         return;
-    var sqlStr = 'SELECT * FROM operator ' + whereStr;
+    var sqlStr = "SELECT coper" 
+                     + ",crule" 
+                     + ",cpoint" 
+                     + ",stuff" 
+                     + ",stuff_en" 
+                     + ",key" 
+                     + ",phrase" 
+                     + ",stateid"
+                     + " FROM operator " + whereStr;
     if (app.get('env') === 'development') {
         // console.log( sqlStr );
         console.log(pgp.as.format(sqlStr, req.body.params));
@@ -1721,9 +1917,9 @@ function operator_DoSelect(req, res, next) {
     db.any(sqlStr, req.body.params)
         .then(function (data) {
             req.dbAnswer = {
-                    status: 'success',
+                    status: "success",
                     data: data,
-                    message: 'Retrieved from operator'
+                    message: "Retrieved from operator"
             };
             return next();
         })
@@ -1741,10 +1937,14 @@ function operator_DoInsert(req, res, next) {
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
         if(operator_HasColname(parstr)) {
-            parList = makeList(parList);
-            parList += parstr;
-            parValues = makeList(parValues);
-            parValues += "${" + parnext + "}";
+            if(req.body.params[parnext]) {
+               parList = makeList(parList);
+               parValues = makeList(parValues);
+               parList += parstr;
+               parValues += "${" + parnext + "}";
+            } else {
+               return next(new Error('column operator.' + parnext + " has undefined value!"));
+            }
         } else {
             return next(new Error('column ' + parnext + " not exists in operator!"));
         }
@@ -1781,12 +1981,14 @@ function operator_DoUpdate(req, res, next) {
         if(operator_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
-        } else if(operator_HasColname(parstr)) {
-            setStr = makeSet(setStr);
-            setStr += parstr + "=${" + parnext + "}";
         } else {
-            return next(new Error('column ' + parnext + " not exists in operator!"));
-        }
+            if(operator_HasColname(parstr)) {
+                setStr = makeSet(setStr);
+                setStr += parstr + "=${" + parnext + "}";
+            } else {
+                return next(new Error('column ' + parnext + " not exists in operator!"));
+            }
+         }
     }
     if(setStr.length == 0)
         return next(new Error('not found any fields for update the operator!'));
@@ -1853,15 +2055,16 @@ function operator_DoDelete(req, res, next) {
 //  {
 //     "cmd": "select" or "insert" or "update or "delete",
 //     "row_count": ... ,
+//     "lodir": <catalogue for lo-* functions> ,
 //     "params": {
-//         "cOper":...,
-//         "cRule":...,
-//         "cPoint":...,
-//         "Stuff":"...",
-//         "Stuff_en":"...",
+//         "coper":...,
+//         "crule":...,
+//         "cpoint":...,
+//         "stuff":"...",
+//         "stuff_en":"...",
 //         "key":"...",
 //         "phrase":"...",
-//         "stateId":"..."
+//         "stateid":"..."
 //      }
 //  }
 // ---------------------------------------------------------
@@ -1887,74 +2090,81 @@ function operator_makeQuery(req, res, next) {
 }
 
 
-var regPoint_collist_all = ['cpoint','cstate','point','point_en','location','location_en'];
-function regPoint_HasColname(colname) {
-    return (regPoint_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
+var regpoint_collist_all = ['cpoint','cstate','point','point_en','location','location_en','geoloc'];
+function regpoint_HasColname(colname) {
+    return (regpoint_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
 }
 
-var regPoint_collist_keys = ['cpoint'];
-function regPoint_HasKeyname(keyname) {
-    return (regPoint_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
+var regpoint_collist_keys = ['cpoint'];
+function regpoint_HasKeyname(keyname) {
+    return (regpoint_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
 }
 
-function regPoint_makeWhere(req, next) {
+function regpoint_makeWhere(req, next) {
     var whereStr = '';
     if(req.body.params === undefined)
         return whereStr;
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(regPoint_HasColname(parstr)) {
+        if(regpoint_HasColname(parstr)) {
+            whereStr = makeWhere(whereStr);
             switch(parstr) {
             case 'cpoint':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " cpoint = ${" + parnext + "}";
                 }
                 break;
             case 'cstate':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " cstate = ${" + parnext + "}";
                 }
                 break;
             case 'point':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " point LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
                 }
                 break;
             case 'point_en':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " point_en LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
                 }
                 break;
             case 'location':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " location LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
                 }
                 break;
             case 'location_en':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " location_en LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
+                }
+                break;
+            case 'geoloc':
+                if(req.body.params[parnext])  {
+                    whereStr += " geoloc = ${" + parnext + "}";
                 }
                 break;
             }
         } else {
-            next(new Error('column ' + parnext + " not exists in regpoint!"));
+            next(new Error('column ' + parnext + ' not exists in regpoint!'));
             return "ERROR";
         }
     }
     return whereStr;
 }
 
-function regPoint_DoSelect(req, res, next) {
-    var whereStr = regPoint_makeWhere(req, next);
+function regpoint_DoSelect(req, res, next) {
+    var whereStr = regpoint_makeWhere(req, next);
     if(whereStr == "ERROR")
         return;
-    var sqlStr = 'SELECT * FROM regpoint ' + whereStr;
+    var sqlStr = "SELECT cpoint" 
+                     + ",cstate" 
+                     + ",point" 
+                     + ",point_en" 
+                     + ",location" 
+                     + ",location_en" 
+                     + ",geoloc"
+                     + " FROM regpoint " + whereStr;
     if (app.get('env') === 'development') {
         // console.log( sqlStr );
         console.log(pgp.as.format(sqlStr, req.body.params));
@@ -1962,9 +2172,9 @@ function regPoint_DoSelect(req, res, next) {
     db.any(sqlStr, req.body.params)
         .then(function (data) {
             req.dbAnswer = {
-                    status: 'success',
+                    status: "success",
                     data: data,
-                    message: 'Retrieved from regpoint'
+                    message: "Retrieved from regpoint"
             };
             return next();
         })
@@ -1973,7 +2183,7 @@ function regPoint_DoSelect(req, res, next) {
     });
 }
 
-function regPoint_DoInsert(req, res, next) {
+function regpoint_DoInsert(req, res, next) {
     if(req.body.params === undefined) {
         return next( new Error('insert params not found!'));
     }
@@ -1981,11 +2191,15 @@ function regPoint_DoInsert(req, res, next) {
     var parValues = '';
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(regPoint_HasColname(parstr)) {
-            parList = makeList(parList);
-            parList += parstr;
-            parValues = makeList(parValues);
-            parValues += "${" + parnext + "}";
+        if(regpoint_HasColname(parstr)) {
+            if(req.body.params[parnext]) {
+               parList = makeList(parList);
+               parValues = makeList(parValues);
+               parList += parstr;
+               parValues += "${" + parnext + "}";
+            } else {
+               return next(new Error('column regpoint.' + parnext + " has undefined value!"));
+            }
         } else {
             return next(new Error('column ' + parnext + " not exists in regpoint!"));
         }
@@ -2011,7 +2225,7 @@ function regPoint_DoInsert(req, res, next) {
     });
 }
 
-function regPoint_DoUpdate(req, res, next) {
+function regpoint_DoUpdate(req, res, next) {
     if(req.body.params === undefined) {
         return next( new Error('update params not found!'));
     }
@@ -2019,15 +2233,17 @@ function regPoint_DoUpdate(req, res, next) {
     var whereStr = '';
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(regPoint_HasKeyname(parstr)) {
+        if(regpoint_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
-        } else if(regPoint_HasColname(parstr)) {
-            setStr = makeSet(setStr);
-            setStr += parstr + "=${" + parnext + "}";
         } else {
-            return next(new Error('column ' + parnext + " not exists in regpoint!"));
-        }
+            if(regpoint_HasColname(parstr)) {
+                setStr = makeSet(setStr);
+                setStr += parstr + "=${" + parnext + "}";
+            } else {
+                return next(new Error('column ' + parnext + " not exists in regpoint!"));
+            }
+         }
     }
     if(setStr.length == 0)
         return next(new Error('not found any fields for update the regpoint!'));
@@ -2051,14 +2267,14 @@ function regPoint_DoUpdate(req, res, next) {
     });
 }
 
-function regPoint_DoDelete(req, res, next) {
+function regpoint_DoDelete(req, res, next) {
     if(req.body.params === undefined) {
         return next( new Error('delete params not found!'));
     }
     var whereStr = '';
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(regPoint_HasKeyname(parstr)) {
+        if(regpoint_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
         } else {
@@ -2088,37 +2304,39 @@ function regPoint_DoDelete(req, res, next) {
 }
 
 // ---------------------------------------------------------
-//  The function makes SQL for the regPoint from the body
-//  URL : POST /regPoint/
+//  The function makes SQL for the regpoint from the body
+//  URL : POST /regpoint/
 //  BODY: 
 //  {
 //     "cmd": "select" or "insert" or "update or "delete",
 //     "row_count": ... ,
+//     "lodir": <catalogue for lo-* functions> ,
 //     "params": {
-//         "cPoint":...,
-//         "cState":...,
+//         "cpoint":...,
+//         "cstate":...,
 //         "point":"...",
 //         "point_en":"...",
 //         "location":"...",
-//         "location_en":"..."
+//         "location_en":"...",
+//         "geoloc":"..."
 //      }
 //  }
 // ---------------------------------------------------------
-function regPoint_makeQuery(req, res, next) {
+function regpoint_makeQuery(req, res, next) {
     if( req.body.cmd === undefined )
         return next( new Error('keyword cmd not found in the body!'));
     switch(req.body.cmd.toString().toLowerCase()) {
     case 'select':
-        regPoint_DoSelect(req, res, next);
+        regpoint_DoSelect(req, res, next);
         break;
     case 'insert':
-        regPoint_DoInsert(req, res, next);
+        regpoint_DoInsert(req, res, next);
         break;
     case 'update':
-        regPoint_DoUpdate(req, res, next);
+        regpoint_DoUpdate(req, res, next);
         break;
     case 'delete':
-        regPoint_DoDelete(req, res, next);
+        regpoint_DoDelete(req, res, next);
         break;
     default:
         return next( new Error('cmd ' + req.body.cmd + " is unknow!"));
@@ -2126,56 +2344,57 @@ function regPoint_makeQuery(req, res, next) {
 }
 
 
-var opRule_collist_all = ['crule','rule','rule_en'];
-function opRule_HasColname(colname) {
-    return (opRule_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
+var oprule_collist_all = ['crule','rule','rule_en'];
+function oprule_HasColname(colname) {
+    return (oprule_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
 }
 
-var opRule_collist_keys = ['crule'];
-function opRule_HasKeyname(keyname) {
-    return (opRule_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
+var oprule_collist_keys = ['crule'];
+function oprule_HasKeyname(keyname) {
+    return (oprule_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
 }
 
-function opRule_makeWhere(req, next) {
+function oprule_makeWhere(req, next) {
     var whereStr = '';
     if(req.body.params === undefined)
         return whereStr;
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(opRule_HasColname(parstr)) {
+        if(oprule_HasColname(parstr)) {
+            whereStr = makeWhere(whereStr);
             switch(parstr) {
             case 'crule':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " crule = ${" + parnext + "}";
                 }
                 break;
             case 'rule':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " rule LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
                 }
                 break;
             case 'rule_en':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " rule_en LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
                 }
                 break;
             }
         } else {
-            next(new Error('column ' + parnext + " not exists in oprule!"));
+            next(new Error('column ' + parnext + ' not exists in oprule!'));
             return "ERROR";
         }
     }
     return whereStr;
 }
 
-function opRule_DoSelect(req, res, next) {
-    var whereStr = opRule_makeWhere(req, next);
+function oprule_DoSelect(req, res, next) {
+    var whereStr = oprule_makeWhere(req, next);
     if(whereStr == "ERROR")
         return;
-    var sqlStr = 'SELECT * FROM oprule ' + whereStr;
+    var sqlStr = "SELECT crule" 
+                     + ",rule" 
+                     + ",rule_en"
+                     + " FROM oprule " + whereStr;
     if (app.get('env') === 'development') {
         // console.log( sqlStr );
         console.log(pgp.as.format(sqlStr, req.body.params));
@@ -2183,9 +2402,9 @@ function opRule_DoSelect(req, res, next) {
     db.any(sqlStr, req.body.params)
         .then(function (data) {
             req.dbAnswer = {
-                    status: 'success',
+                    status: "success",
                     data: data,
-                    message: 'Retrieved from oprule'
+                    message: "Retrieved from oprule"
             };
             return next();
         })
@@ -2194,7 +2413,7 @@ function opRule_DoSelect(req, res, next) {
     });
 }
 
-function opRule_DoInsert(req, res, next) {
+function oprule_DoInsert(req, res, next) {
     if(req.body.params === undefined) {
         return next( new Error('insert params not found!'));
     }
@@ -2202,11 +2421,15 @@ function opRule_DoInsert(req, res, next) {
     var parValues = '';
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(opRule_HasColname(parstr)) {
-            parList = makeList(parList);
-            parList += parstr;
-            parValues = makeList(parValues);
-            parValues += "${" + parnext + "}";
+        if(oprule_HasColname(parstr)) {
+            if(req.body.params[parnext]) {
+               parList = makeList(parList);
+               parValues = makeList(parValues);
+               parList += parstr;
+               parValues += "${" + parnext + "}";
+            } else {
+               return next(new Error('column oprule.' + parnext + " has undefined value!"));
+            }
         } else {
             return next(new Error('column ' + parnext + " not exists in oprule!"));
         }
@@ -2232,7 +2455,7 @@ function opRule_DoInsert(req, res, next) {
     });
 }
 
-function opRule_DoUpdate(req, res, next) {
+function oprule_DoUpdate(req, res, next) {
     if(req.body.params === undefined) {
         return next( new Error('update params not found!'));
     }
@@ -2240,15 +2463,17 @@ function opRule_DoUpdate(req, res, next) {
     var whereStr = '';
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(opRule_HasKeyname(parstr)) {
+        if(oprule_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
-        } else if(opRule_HasColname(parstr)) {
-            setStr = makeSet(setStr);
-            setStr += parstr + "=${" + parnext + "}";
         } else {
-            return next(new Error('column ' + parnext + " not exists in oprule!"));
-        }
+            if(oprule_HasColname(parstr)) {
+                setStr = makeSet(setStr);
+                setStr += parstr + "=${" + parnext + "}";
+            } else {
+                return next(new Error('column ' + parnext + " not exists in oprule!"));
+            }
+         }
     }
     if(setStr.length == 0)
         return next(new Error('not found any fields for update the oprule!'));
@@ -2272,14 +2497,14 @@ function opRule_DoUpdate(req, res, next) {
     });
 }
 
-function opRule_DoDelete(req, res, next) {
+function oprule_DoDelete(req, res, next) {
     if(req.body.params === undefined) {
         return next( new Error('delete params not found!'));
     }
     var whereStr = '';
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(opRule_HasKeyname(parstr)) {
+        if(oprule_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
         } else {
@@ -2309,34 +2534,35 @@ function opRule_DoDelete(req, res, next) {
 }
 
 // ---------------------------------------------------------
-//  The function makes SQL for the opRule from the body
-//  URL : POST /opRule/
+//  The function makes SQL for the oprule from the body
+//  URL : POST /oprule/
 //  BODY: 
 //  {
 //     "cmd": "select" or "insert" or "update or "delete",
 //     "row_count": ... ,
+//     "lodir": <catalogue for lo-* functions> ,
 //     "params": {
-//         "cRule":...,
-//         "Rule":"...",
-//         "Rule_en":"..."
+//         "crule":...,
+//         "rule":"...",
+//         "rule_en":"..."
 //      }
 //  }
 // ---------------------------------------------------------
-function opRule_makeQuery(req, res, next) {
+function oprule_makeQuery(req, res, next) {
     if( req.body.cmd === undefined )
         return next( new Error('keyword cmd not found in the body!'));
     switch(req.body.cmd.toString().toLowerCase()) {
     case 'select':
-        opRule_DoSelect(req, res, next);
+        oprule_DoSelect(req, res, next);
         break;
     case 'insert':
-        opRule_DoInsert(req, res, next);
+        oprule_DoInsert(req, res, next);
         break;
     case 'update':
-        opRule_DoUpdate(req, res, next);
+        oprule_DoUpdate(req, res, next);
         break;
     case 'delete':
-        opRule_DoDelete(req, res, next);
+        oprule_DoDelete(req, res, next);
         break;
     default:
         return next( new Error('cmd ' + req.body.cmd + " is unknow!"));
@@ -2344,80 +2570,81 @@ function opRule_makeQuery(req, res, next) {
 }
 
 
-var Contact_collist_all = ['ccontact','cagent','pid','key','phrase','memo','stateid'];
-function Contact_HasColname(colname) {
-    return (Contact_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
+var contact_collist_all = ['ccontact','cagent','pid','key','phrase','memo','stateid'];
+function contact_HasColname(colname) {
+    return (contact_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
 }
 
-var Contact_collist_keys = ['ccontact'];
-function Contact_HasKeyname(keyname) {
-    return (Contact_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
+var contact_collist_keys = ['ccontact'];
+function contact_HasKeyname(keyname) {
+    return (contact_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
 }
 
-function Contact_makeWhere(req, next) {
+function contact_makeWhere(req, next) {
     var whereStr = '';
     if(req.body.params === undefined)
         return whereStr;
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(Contact_HasColname(parstr)) {
+        if(contact_HasColname(parstr)) {
+            whereStr = makeWhere(whereStr);
             switch(parstr) {
             case 'ccontact':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " ccontact = ${" + parnext + "}";
                 }
                 break;
             case 'cagent':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " cagent = ${" + parnext + "}";
                 }
                 break;
             case 'pid':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " pid = ${" + parnext + "}";
                 }
                 break;
             case 'key':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " key LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
                 }
                 break;
             case 'phrase':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " phrase LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
                 }
                 break;
             case 'memo':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " memo = ${" + parnext + "}";
                 }
                 break;
             case 'stateid':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " stateid = ${" + parnext + "}";
                 }
                 break;
             }
         } else {
-            next(new Error('column ' + parnext + " not exists in contact!"));
+            next(new Error('column ' + parnext + ' not exists in contact!'));
             return "ERROR";
         }
     }
     return whereStr;
 }
 
-function Contact_DoSelect(req, res, next) {
-    var whereStr = Contact_makeWhere(req, next);
+function contact_DoSelect(req, res, next) {
+    var whereStr = contact_makeWhere(req, next);
     if(whereStr == "ERROR")
         return;
-    var sqlStr = 'SELECT * FROM contact ' + whereStr;
+    var sqlStr = "SELECT ccontact" 
+                     + ",cagent" 
+                     + ",pid" 
+                     + ",key" 
+                     + ",phrase" 
+                     + ",memo" 
+                     + ",stateid"
+                     + " FROM contact " + whereStr;
     if (app.get('env') === 'development') {
         // console.log( sqlStr );
         console.log(pgp.as.format(sqlStr, req.body.params));
@@ -2425,9 +2652,9 @@ function Contact_DoSelect(req, res, next) {
     db.any(sqlStr, req.body.params)
         .then(function (data) {
             req.dbAnswer = {
-                    status: 'success',
+                    status: "success",
                     data: data,
-                    message: 'Retrieved from contact'
+                    message: "Retrieved from contact"
             };
             return next();
         })
@@ -2436,7 +2663,7 @@ function Contact_DoSelect(req, res, next) {
     });
 }
 
-function Contact_DoInsert(req, res, next) {
+function contact_DoInsert(req, res, next) {
     if(req.body.params === undefined) {
         return next( new Error('insert params not found!'));
     }
@@ -2444,11 +2671,15 @@ function Contact_DoInsert(req, res, next) {
     var parValues = '';
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(Contact_HasColname(parstr)) {
-            parList = makeList(parList);
-            parList += parstr;
-            parValues = makeList(parValues);
-            parValues += "${" + parnext + "}";
+        if(contact_HasColname(parstr)) {
+            if(req.body.params[parnext]) {
+               parList = makeList(parList);
+               parValues = makeList(parValues);
+               parList += parstr;
+               parValues += "${" + parnext + "}";
+            } else {
+               return next(new Error('column contact.' + parnext + " has undefined value!"));
+            }
         } else {
             return next(new Error('column ' + parnext + " not exists in contact!"));
         }
@@ -2474,7 +2705,7 @@ function Contact_DoInsert(req, res, next) {
     });
 }
 
-function Contact_DoUpdate(req, res, next) {
+function contact_DoUpdate(req, res, next) {
     if(req.body.params === undefined) {
         return next( new Error('update params not found!'));
     }
@@ -2482,15 +2713,17 @@ function Contact_DoUpdate(req, res, next) {
     var whereStr = '';
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(Contact_HasKeyname(parstr)) {
+        if(contact_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
-        } else if(Contact_HasColname(parstr)) {
-            setStr = makeSet(setStr);
-            setStr += parstr + "=${" + parnext + "}";
         } else {
-            return next(new Error('column ' + parnext + " not exists in contact!"));
-        }
+            if(contact_HasColname(parstr)) {
+                setStr = makeSet(setStr);
+                setStr += parstr + "=${" + parnext + "}";
+            } else {
+                return next(new Error('column ' + parnext + " not exists in contact!"));
+            }
+         }
     }
     if(setStr.length == 0)
         return next(new Error('not found any fields for update the contact!'));
@@ -2514,14 +2747,14 @@ function Contact_DoUpdate(req, res, next) {
     });
 }
 
-function Contact_DoDelete(req, res, next) {
+function contact_DoDelete(req, res, next) {
     if(req.body.params === undefined) {
         return next( new Error('delete params not found!'));
     }
     var whereStr = '';
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(Contact_HasKeyname(parstr)) {
+        if(contact_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
         } else {
@@ -2551,38 +2784,39 @@ function Contact_DoDelete(req, res, next) {
 }
 
 // ---------------------------------------------------------
-//  The function makes SQL for the Contact from the body
-//  URL : POST /Contact/
+//  The function makes SQL for the contact from the body
+//  URL : POST /contact/
 //  BODY: 
 //  {
 //     "cmd": "select" or "insert" or "update or "delete",
 //     "row_count": ... ,
+//     "lodir": <catalogue for lo-* functions> ,
 //     "params": {
-//         "cContact":...,
-//         "cAgent":...,
-//         "pId":"...",
+//         "ccontact":...,
+//         "cagent":...,
+//         "pid":"...",
 //         "key":"...",
 //         "phrase":"...",
-//         "Memo":"...",
-//         "stateId":"..."
+//         "memo":"...",
+//         "stateid":"..."
 //      }
 //  }
 // ---------------------------------------------------------
-function Contact_makeQuery(req, res, next) {
+function contact_makeQuery(req, res, next) {
     if( req.body.cmd === undefined )
         return next( new Error('keyword cmd not found in the body!'));
     switch(req.body.cmd.toString().toLowerCase()) {
     case 'select':
-        Contact_DoSelect(req, res, next);
+        contact_DoSelect(req, res, next);
         break;
     case 'insert':
-        Contact_DoInsert(req, res, next);
+        contact_DoInsert(req, res, next);
         break;
     case 'update':
-        Contact_DoUpdate(req, res, next);
+        contact_DoUpdate(req, res, next);
         break;
     case 'delete':
-        Contact_DoDelete(req, res, next);
+        contact_DoDelete(req, res, next);
         break;
     default:
         return next( new Error('cmd ' + req.body.cmd + " is unknow!"));
@@ -2590,56 +2824,57 @@ function Contact_makeQuery(req, res, next) {
 }
 
 
-var Agent_collist_all = ['cagent','agent','memo'];
-function Agent_HasColname(colname) {
-    return (Agent_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
+var agent_collist_all = ['cagent','agent','memo'];
+function agent_HasColname(colname) {
+    return (agent_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
 }
 
-var Agent_collist_keys = ['cagent'];
-function Agent_HasKeyname(keyname) {
-    return (Agent_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
+var agent_collist_keys = ['cagent'];
+function agent_HasKeyname(keyname) {
+    return (agent_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
 }
 
-function Agent_makeWhere(req, next) {
+function agent_makeWhere(req, next) {
     var whereStr = '';
     if(req.body.params === undefined)
         return whereStr;
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(Agent_HasColname(parstr)) {
+        if(agent_HasColname(parstr)) {
+            whereStr = makeWhere(whereStr);
             switch(parstr) {
             case 'cagent':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " cagent = ${" + parnext + "}";
                 }
                 break;
             case 'agent':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " agent LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
                 }
                 break;
             case 'memo':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " memo = ${" + parnext + "}";
                 }
                 break;
             }
         } else {
-            next(new Error('column ' + parnext + " not exists in agent!"));
+            next(new Error('column ' + parnext + ' not exists in agent!'));
             return "ERROR";
         }
     }
     return whereStr;
 }
 
-function Agent_DoSelect(req, res, next) {
-    var whereStr = Agent_makeWhere(req, next);
+function agent_DoSelect(req, res, next) {
+    var whereStr = agent_makeWhere(req, next);
     if(whereStr == "ERROR")
         return;
-    var sqlStr = 'SELECT * FROM agent ' + whereStr;
+    var sqlStr = "SELECT cagent" 
+                     + ",agent" 
+                     + ",memo"
+                     + " FROM agent " + whereStr;
     if (app.get('env') === 'development') {
         // console.log( sqlStr );
         console.log(pgp.as.format(sqlStr, req.body.params));
@@ -2647,9 +2882,9 @@ function Agent_DoSelect(req, res, next) {
     db.any(sqlStr, req.body.params)
         .then(function (data) {
             req.dbAnswer = {
-                    status: 'success',
+                    status: "success",
                     data: data,
-                    message: 'Retrieved from agent'
+                    message: "Retrieved from agent"
             };
             return next();
         })
@@ -2658,7 +2893,7 @@ function Agent_DoSelect(req, res, next) {
     });
 }
 
-function Agent_DoInsert(req, res, next) {
+function agent_DoInsert(req, res, next) {
     if(req.body.params === undefined) {
         return next( new Error('insert params not found!'));
     }
@@ -2666,11 +2901,15 @@ function Agent_DoInsert(req, res, next) {
     var parValues = '';
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(Agent_HasColname(parstr)) {
-            parList = makeList(parList);
-            parList += parstr;
-            parValues = makeList(parValues);
-            parValues += "${" + parnext + "}";
+        if(agent_HasColname(parstr)) {
+            if(req.body.params[parnext]) {
+               parList = makeList(parList);
+               parValues = makeList(parValues);
+               parList += parstr;
+               parValues += "${" + parnext + "}";
+            } else {
+               return next(new Error('column agent.' + parnext + " has undefined value!"));
+            }
         } else {
             return next(new Error('column ' + parnext + " not exists in agent!"));
         }
@@ -2696,7 +2935,7 @@ function Agent_DoInsert(req, res, next) {
     });
 }
 
-function Agent_DoUpdate(req, res, next) {
+function agent_DoUpdate(req, res, next) {
     if(req.body.params === undefined) {
         return next( new Error('update params not found!'));
     }
@@ -2704,15 +2943,17 @@ function Agent_DoUpdate(req, res, next) {
     var whereStr = '';
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(Agent_HasKeyname(parstr)) {
+        if(agent_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
-        } else if(Agent_HasColname(parstr)) {
-            setStr = makeSet(setStr);
-            setStr += parstr + "=${" + parnext + "}";
         } else {
-            return next(new Error('column ' + parnext + " not exists in agent!"));
-        }
+            if(agent_HasColname(parstr)) {
+                setStr = makeSet(setStr);
+                setStr += parstr + "=${" + parnext + "}";
+            } else {
+                return next(new Error('column ' + parnext + " not exists in agent!"));
+            }
+         }
     }
     if(setStr.length == 0)
         return next(new Error('not found any fields for update the agent!'));
@@ -2736,14 +2977,14 @@ function Agent_DoUpdate(req, res, next) {
     });
 }
 
-function Agent_DoDelete(req, res, next) {
+function agent_DoDelete(req, res, next) {
     if(req.body.params === undefined) {
         return next( new Error('delete params not found!'));
     }
     var whereStr = '';
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(Agent_HasKeyname(parstr)) {
+        if(agent_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
         } else {
@@ -2773,34 +3014,35 @@ function Agent_DoDelete(req, res, next) {
 }
 
 // ---------------------------------------------------------
-//  The function makes SQL for the Agent from the body
-//  URL : POST /Agent/
+//  The function makes SQL for the agent from the body
+//  URL : POST /agent/
 //  BODY: 
 //  {
 //     "cmd": "select" or "insert" or "update or "delete",
 //     "row_count": ... ,
+//     "lodir": <catalogue for lo-* functions> ,
 //     "params": {
-//         "cAgent":...,
-//         "Agent":"...",
-//         "Memo":"..."
+//         "cagent":...,
+//         "agent":"...",
+//         "memo":"..."
 //      }
 //  }
 // ---------------------------------------------------------
-function Agent_makeQuery(req, res, next) {
+function agent_makeQuery(req, res, next) {
     if( req.body.cmd === undefined )
         return next( new Error('keyword cmd not found in the body!'));
     switch(req.body.cmd.toString().toLowerCase()) {
     case 'select':
-        Agent_DoSelect(req, res, next);
+        agent_DoSelect(req, res, next);
         break;
     case 'insert':
-        Agent_DoInsert(req, res, next);
+        agent_DoInsert(req, res, next);
         break;
     case 'update':
-        Agent_DoUpdate(req, res, next);
+        agent_DoUpdate(req, res, next);
         break;
     case 'delete':
-        Agent_DoDelete(req, res, next);
+        agent_DoDelete(req, res, next);
         break;
     default:
         return next( new Error('cmd ' + req.body.cmd + " is unknow!"));
@@ -2813,7 +3055,7 @@ function access_HasColname(colname) {
     return (access_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
 }
 
-var access_collist_keys = ['coper','pid'];
+var access_collist_keys = [];
 function access_HasKeyname(keyname) {
     return (access_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
 }
@@ -2825,28 +3067,26 @@ function access_makeWhere(req, next) {
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
         if(access_HasColname(parstr)) {
+            whereStr = makeWhere(whereStr);
             switch(parstr) {
             case 'coper':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " coper = ${" + parnext + "}";
                 }
                 break;
             case 'pid':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " pid = ${" + parnext + "}";
                 }
                 break;
             case 'stateid':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " stateid = ${" + parnext + "}";
                 }
                 break;
             }
         } else {
-            next(new Error('column ' + parnext + " not exists in access!"));
+            next(new Error('column ' + parnext + ' not exists in access!'));
             return "ERROR";
         }
     }
@@ -2857,7 +3097,10 @@ function access_DoSelect(req, res, next) {
     var whereStr = access_makeWhere(req, next);
     if(whereStr == "ERROR")
         return;
-    var sqlStr = 'SELECT * FROM access ' + whereStr;
+    var sqlStr = "SELECT coper" 
+                     + ",pid" 
+                     + ",stateid"
+                     + " FROM access " + whereStr;
     if (app.get('env') === 'development') {
         // console.log( sqlStr );
         console.log(pgp.as.format(sqlStr, req.body.params));
@@ -2865,9 +3108,9 @@ function access_DoSelect(req, res, next) {
     db.any(sqlStr, req.body.params)
         .then(function (data) {
             req.dbAnswer = {
-                    status: 'success',
+                    status: "success",
                     data: data,
-                    message: 'Retrieved from access'
+                    message: "Retrieved from access"
             };
             return next();
         })
@@ -2885,10 +3128,14 @@ function access_DoInsert(req, res, next) {
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
         if(access_HasColname(parstr)) {
-            parList = makeList(parList);
-            parList += parstr;
-            parValues = makeList(parValues);
-            parValues += "${" + parnext + "}";
+            if(req.body.params[parnext]) {
+               parList = makeList(parList);
+               parValues = makeList(parValues);
+               parList += parstr;
+               parValues += "${" + parnext + "}";
+            } else {
+               return next(new Error('column access.' + parnext + " has undefined value!"));
+            }
         } else {
             return next(new Error('column ' + parnext + " not exists in access!"));
         }
@@ -2924,12 +3171,14 @@ function access_DoUpdate(req, res, next) {
         if(access_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
-        } else if(access_HasColname(parstr)) {
-            setStr = makeSet(setStr);
-            setStr += parstr + "=${" + parnext + "}";
         } else {
-            return next(new Error('column ' + parnext + " not exists in access!"));
-        }
+            if(access_HasColname(parstr)) {
+                setStr = makeSet(setStr);
+                setStr += parstr + "=${" + parnext + "}";
+            } else {
+                return next(new Error('column ' + parnext + " not exists in access!"));
+            }
+         }
     }
     if(setStr.length == 0)
         return next(new Error('not found any fields for update the access!'));
@@ -2996,10 +3245,11 @@ function access_DoDelete(req, res, next) {
 //  {
 //     "cmd": "select" or "insert" or "update or "delete",
 //     "row_count": ... ,
+//     "lodir": <catalogue for lo-* functions> ,
 //     "params": {
-//         "cOper":...,
-//         "pId":"...",
-//         "stateId":"..."
+//         "coper":...,
+//         "pid":"...",
+//         "stateid":"..."
 //      }
 //  }
 // ---------------------------------------------------------
@@ -3025,56 +3275,68 @@ function access_makeQuery(req, res, next) {
 }
 
 
-var docImage_collist_all = ['pagen','cdoc','image'];
-function docImage_HasColname(colname) {
-    return (docImage_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
+var docimage_collist_all = ['pagen','cdoc','imageid'];
+function docimage_HasColname(colname) {
+    return (docimage_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
 }
 
-var docImage_collist_keys = ['pagen'];
-function docImage_HasKeyname(keyname) {
-    return (docImage_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
+var docimage_collist_keys = ['pagen'];
+function docimage_HasKeyname(keyname) {
+    return (docimage_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
 }
 
-function docImage_makeWhere(req, next) {
+var docimage_collist_oids = ['imageid'];
+function docimage_HasOID(oidname) {
+    return (docimage_collist_oids.indexOf(oidname.toString().toLowerCase()) > -1);
+}
+
+function docimage_makeWhere(req, next) {
     var whereStr = '';
     if(req.body.params === undefined)
         return whereStr;
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(docImage_HasColname(parstr)) {
+        if(docimage_HasColname(parstr)) {
+            whereStr = makeWhere(whereStr);
             switch(parstr) {
             case 'pagen':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " pagen = ${" + parnext + "}";
                 }
                 break;
             case 'cdoc':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " cdoc = ${" + parnext + "}";
                 }
                 break;
-            case 'image':
+            case 'imageid':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
-                    whereStr += " image LIKE '%" + req.body.params[parnext].toString().trim() + "%'";
+                    whereStr += " imageid = ${" + parnext + "}";
                 }
                 break;
             }
         } else {
-            next(new Error('column ' + parnext + " not exists in docimage!"));
+            next(new Error('column ' + parnext + ' not exists in docimage!'));
             return "ERROR";
         }
     }
     return whereStr;
 }
 
-function docImage_DoSelect(req, res, next) {
-    var whereStr = docImage_makeWhere(req, next);
+function docimage_DoSelect(req, res, next) {
+   var lodir = getLoDir(req, next);
+   if (app.get('env') === 'development')
+      console.log("lodir is " + lodir);
+   if(lodir == "ERROR")
+      return;
+    var whereStr = docimage_makeWhere(req, next);
     if(whereStr == "ERROR")
         return;
-    var sqlStr = 'SELECT * FROM docimage ' + whereStr;
+    var sqlStr = "SELECT pagen" 
+                     + ",cdoc" 
+                     + ",lo_export(imageid,'" + lodir + "' || imageid)"
+                     + ",'" + lodir + "' || imageid as imageid_loexport"
+                     + " FROM docimage " + whereStr;
     if (app.get('env') === 'development') {
         // console.log( sqlStr );
         console.log(pgp.as.format(sqlStr, req.body.params));
@@ -3082,9 +3344,9 @@ function docImage_DoSelect(req, res, next) {
     db.any(sqlStr, req.body.params)
         .then(function (data) {
             req.dbAnswer = {
-                    status: 'success',
+                    status: "success",
                     data: data,
-                    message: 'Retrieved from docimage'
+                    message: "Retrieved from docimage"
             };
             return next();
         })
@@ -3093,7 +3355,7 @@ function docImage_DoSelect(req, res, next) {
     });
 }
 
-function docImage_DoInsert(req, res, next) {
+function docimage_DoInsert(req, res, next) {
     if(req.body.params === undefined) {
         return next( new Error('insert params not found!'));
     }
@@ -3101,26 +3363,35 @@ function docImage_DoInsert(req, res, next) {
     var parValues = '';
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(docImage_HasColname(parstr)) {
-            parList = makeList(parList);
-            parList += parstr;
-            parValues = makeList(parValues);
-            parValues += "${" + parnext + "}";
+        if(docimage_HasColname(parstr)) {
+            if(req.body.params[parnext]) {
+               parList = makeList(parList);
+               parValues = makeList(parValues);
+               parList += parstr;
+               if(docimage_HasOID(parstr)) {
+                  parValues += " lo_import('" + req.body.params[parnext] + "')";
+               } else {
+                  parValues += "${" + parnext + "}";
+               }
+            } else {
+               return next(new Error('column docimage.' + parnext + " has undefined value!"));
+            }
         } else {
             return next(new Error('column ' + parnext + " not exists in docimage!"));
         }
     }
     if(parList.length == 0)
         return next(new Error('not found any fields for insert into docimage!'));
-    var sqlStr = "INSERT INTO docimage(" + parList + ") VALUES (" + parValues + ")";
+    var sqlStr = "INSERT INTO docimage(" + parList + ") VALUES (" + parValues + ") RETURNING imageid";
     if (app.get('env') === 'development') {
        // console.log( sqlStr );
        console.log(pgp.as.format(sqlStr, req.body.params));
     }
-    db.none(sqlStr, req.body.params)
-        .then(function () {
+    db.one(sqlStr, req.body.params)
+        .then(function (data) {
             req.dbAnswer = {
                     status: 'success',
+                    data: data,
                     message: 'Inserted into docimage'
                 };
             return next();
@@ -3130,7 +3401,7 @@ function docImage_DoInsert(req, res, next) {
     });
 }
 
-function docImage_DoUpdate(req, res, next) {
+function docimage_DoUpdate(req, res, next) {
     if(req.body.params === undefined) {
         return next( new Error('update params not found!'));
     }
@@ -3138,15 +3409,21 @@ function docImage_DoUpdate(req, res, next) {
     var whereStr = '';
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(docImage_HasKeyname(parstr)) {
+        if(docimage_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
-        } else if(docImage_HasColname(parstr)) {
-            setStr = makeSet(setStr);
-            setStr += parstr + "=${" + parnext + "}";
         } else {
-            return next(new Error('column ' + parnext + " not exists in docimage!"));
-        }
+            if(docimage_HasColname(parstr)) {
+                setStr = makeSet(setStr);
+                if(docimage_HasOID(parstr)) {
+                   setStr += parstr + "=lo_import('" + req.body.params[parnext] + "')";
+                } else {
+                   setStr += parstr + "=${" + parnext + "}";
+                }
+            } else {
+                return next(new Error('column ' + parnext + " not exists in docimage!"));
+            }
+         }
     }
     if(setStr.length == 0)
         return next(new Error('not found any fields for update the docimage!'));
@@ -3170,14 +3447,14 @@ function docImage_DoUpdate(req, res, next) {
     });
 }
 
-function docImage_DoDelete(req, res, next) {
+function docimage_DoDelete(req, res, next) {
     if(req.body.params === undefined) {
         return next( new Error('delete params not found!'));
     }
     var whereStr = '';
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
-        if(docImage_HasKeyname(parstr)) {
+        if(docimage_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
         } else {
@@ -3207,34 +3484,35 @@ function docImage_DoDelete(req, res, next) {
 }
 
 // ---------------------------------------------------------
-//  The function makes SQL for the docImage from the body
-//  URL : POST /docImage/
+//  The function makes SQL for the docimage from the body
+//  URL : POST /docimage/
 //  BODY: 
 //  {
 //     "cmd": "select" or "insert" or "update or "delete",
 //     "row_count": ... ,
+//     "lodir": <catalogue for lo-* functions> ,
 //     "params": {
-//         "pageN":...,
-//         "cDoc":...,
-//         "image":"..."
+//         "pagen":...,
+//         "cdoc":...,
+//         "imageid":"..."
 //      }
 //  }
 // ---------------------------------------------------------
-function docImage_makeQuery(req, res, next) {
+function docimage_makeQuery(req, res, next) {
     if( req.body.cmd === undefined )
         return next( new Error('keyword cmd not found in the body!'));
     switch(req.body.cmd.toString().toLowerCase()) {
     case 'select':
-        docImage_DoSelect(req, res, next);
+        docimage_DoSelect(req, res, next);
         break;
     case 'insert':
-        docImage_DoInsert(req, res, next);
+        docimage_DoInsert(req, res, next);
         break;
     case 'update':
-        docImage_DoUpdate(req, res, next);
+        docimage_DoUpdate(req, res, next);
         break;
     case 'delete':
-        docImage_DoDelete(req, res, next);
+        docimage_DoDelete(req, res, next);
         break;
     default:
         return next( new Error('cmd ' + req.body.cmd + " is unknow!"));
@@ -3247,7 +3525,7 @@ function ref_HasColname(colname) {
     return (ref_collist_all.indexOf(colname.toString().toLowerCase()) > -1);
 }
 
-var ref_collist_keys = ['pid','per_pid'];
+var ref_collist_keys = [];
 function ref_HasKeyname(keyname) {
     return (ref_collist_keys.indexOf(keyname.toString().toLowerCase()) > -1);
 }
@@ -3259,28 +3537,26 @@ function ref_makeWhere(req, next) {
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
         if(ref_HasColname(parstr)) {
+            whereStr = makeWhere(whereStr);
             switch(parstr) {
             case 'pid':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " pid = ${" + parnext + "}";
                 }
                 break;
             case 'per_pid':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " per_pid = ${" + parnext + "}";
                 }
                 break;
             case 'memo':
                 if(req.body.params[parnext])  {
-                    whereStr = makeWhere(whereStr);
                     whereStr += " memo = ${" + parnext + "}";
                 }
                 break;
             }
         } else {
-            next(new Error('column ' + parnext + " not exists in ref!"));
+            next(new Error('column ' + parnext + ' not exists in ref!'));
             return "ERROR";
         }
     }
@@ -3291,7 +3567,10 @@ function ref_DoSelect(req, res, next) {
     var whereStr = ref_makeWhere(req, next);
     if(whereStr == "ERROR")
         return;
-    var sqlStr = 'SELECT * FROM ref ' + whereStr;
+    var sqlStr = "SELECT pid" 
+                     + ",per_pid" 
+                     + ",memo"
+                     + " FROM ref " + whereStr;
     if (app.get('env') === 'development') {
         // console.log( sqlStr );
         console.log(pgp.as.format(sqlStr, req.body.params));
@@ -3299,9 +3578,9 @@ function ref_DoSelect(req, res, next) {
     db.any(sqlStr, req.body.params)
         .then(function (data) {
             req.dbAnswer = {
-                    status: 'success',
+                    status: "success",
                     data: data,
-                    message: 'Retrieved from ref'
+                    message: "Retrieved from ref"
             };
             return next();
         })
@@ -3319,10 +3598,14 @@ function ref_DoInsert(req, res, next) {
     for(var parnext in req.body.params) {
         var parstr = parnext.toString().toLowerCase();
         if(ref_HasColname(parstr)) {
-            parList = makeList(parList);
-            parList += parstr;
-            parValues = makeList(parValues);
-            parValues += "${" + parnext + "}";
+            if(req.body.params[parnext]) {
+               parList = makeList(parList);
+               parValues = makeList(parValues);
+               parList += parstr;
+               parValues += "${" + parnext + "}";
+            } else {
+               return next(new Error('column ref.' + parnext + " has undefined value!"));
+            }
         } else {
             return next(new Error('column ' + parnext + " not exists in ref!"));
         }
@@ -3358,12 +3641,14 @@ function ref_DoUpdate(req, res, next) {
         if(ref_HasKeyname(parstr)) {
             whereStr = makeWhere(whereStr);
             whereStr += parstr + "=${" + parnext + "}";
-        } else if(ref_HasColname(parstr)) {
-            setStr = makeSet(setStr);
-            setStr += parstr + "=${" + parnext + "}";
         } else {
-            return next(new Error('column ' + parnext + " not exists in ref!"));
-        }
+            if(ref_HasColname(parstr)) {
+                setStr = makeSet(setStr);
+                setStr += parstr + "=${" + parnext + "}";
+            } else {
+                return next(new Error('column ' + parnext + " not exists in ref!"));
+            }
+         }
     }
     if(setStr.length == 0)
         return next(new Error('not found any fields for update the ref!'));
@@ -3430,10 +3715,11 @@ function ref_DoDelete(req, res, next) {
 //  {
 //     "cmd": "select" or "insert" or "update or "delete",
 //     "row_count": ... ,
+//     "lodir": <catalogue for lo-* functions> ,
 //     "params": {
-//         "pId":"...",
-//         "per_pId":"...",
-//         "Memo":"..."
+//         "pid":"...",
+//         "per_pid":"...",
+//         "memo":"..."
 //      }
 //  }
 // ---------------------------------------------------------
@@ -3460,19 +3746,19 @@ function ref_makeQuery(req, res, next) {
 
 
 module.exports = {
-   docSpec_makeQuery: docSpec_makeQuery,
+   docspec_makeQuery: docspec_makeQuery,
    doc_makeQuery: doc_makeQuery,
-   State_makeQuery: State_makeQuery,
+   state_makeQuery: state_makeQuery,
    person_makeQuery: person_makeQuery,
-   photoData_makeQuery: photoData_makeQuery,
-   photoSpec_makeQuery: photoSpec_makeQuery,
-   audioDatа_makeQuery: audioDatа_makeQuery,
+   photodata_makeQuery: photodata_makeQuery,
+   photospec_makeQuery: photospec_makeQuery,
+   audiodata_makeQuery: audiodata_makeQuery,
    operator_makeQuery: operator_makeQuery,
-   regPoint_makeQuery: regPoint_makeQuery,
-   opRule_makeQuery: opRule_makeQuery,
-   Contact_makeQuery: Contact_makeQuery,
-   Agent_makeQuery: Agent_makeQuery,
+   regpoint_makeQuery: regpoint_makeQuery,
+   oprule_makeQuery: oprule_makeQuery,
+   contact_makeQuery: contact_makeQuery,
+   agent_makeQuery: agent_makeQuery,
    access_makeQuery: access_makeQuery,
-   docImage_makeQuery: docImage_makeQuery,
+   docimage_makeQuery: docimage_makeQuery,
    ref_makeQuery: ref_makeQuery
 };

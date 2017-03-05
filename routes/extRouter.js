@@ -5,6 +5,7 @@ const photo = require('../server/photo');
 
 extRouter.post('/photo_push', photo.pushParser, photo.pushWorker);
 extRouter.post('/photo_get', photo.getParser, photo.getWorker);
+extRouter.post('/photo_list', photo.getParser, photo.ticketWorker);
 
 // extRouter.post('/login', 
 //     (req, res, next) => {

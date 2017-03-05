@@ -30,31 +30,33 @@ router.post('/register', function(req, res) {
 });
 
 router.post('/login', 
-  (req, res, next) => {
-    passport.authenticate('local',
-			(err, user, info) => {
-				if (err) {
-				  console.log('Error when authenticate', err);
-				  return next(err);
-				}
-				if (!user) {
-				  console.log('Missing user when authenticate', info);
-				  return res.status(401).json({
-					  err: {message: info}
-				  });
-				}
-				req.logIn(user, function(err) {
-					if (err) {
-						console.log('err is ' + err);
-						return res.status(500).json({
-							err: {message:'Could not log in user'}
-						});
-					}
-					verifyUser.acceptUser(req, res, user);
-	      }); // req.logIn
+	    (req, res, next) => {
+		passport.authenticate('local',
+				      (err, user, info) => {
+					  if (err) {
+					      console.log('Error when authenticate', err);
+					      return next(err);
+					  }
+					  if (!user) {
+					      console.log('Missing user when authenticate', info);
+					      return res.status(401).json({
+						  err: {message: info}
+					      });
+					  }
+					  req.logIn(user, function(err) {
+					      debugger;
+					      if (err) {
+						  console.log('err is ' + err);
+						  // return next(err);
+						  return res.status(500).json({
+						      err: {message:'Could not log in user'}
+						  });
+					      }
+					      verifyUser.acceptUser(req, res, user);
+					  }); // req.logIn
+				      }
+				     )(req,res,next);
 	    }
-		)(req,res,next);
-  }
 );
 
 function doLogout(req, res) {

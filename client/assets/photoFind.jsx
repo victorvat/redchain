@@ -3,7 +3,8 @@ import { browserHistory } from 'react-router';
 import { Form, FormGroup, FormControl, Col, Button, ControlLabel, Table, ProgressBar, Alert } from 'react-bootstrap';
 
 import store from '../store';
-
+import gate from '../lib/gate';
+import PhotoTrackList from './photoTrackList.jsx'
 import UploadCtrl from '../components/uploadCtrl.jsx'
 
 class PhotoFind extends React.Component {
@@ -45,8 +46,9 @@ class PhotoFind extends React.Component {
         formData.append('upload', file, file.name);
         
         // create an AJAX request
-        const xhr = new XMLHttpRequest();
-        xhr.open('post', '/ext/photo_push');
+        //const xhr = new XMLHttpRequest();
+        //xhr.open('post', '/ext/photo_push');
+        const xhr = gate.broker('/ext/photo_push');
         xhr.responseType = 'json';
         xhr.addEventListener('progress', (evt) => {
             const percentComplete = parseInt(100 * evt.loaded / total);
@@ -123,27 +125,8 @@ class PhotoFind extends React.Component {
                     isNotReady={isNotReady || isProgress}
                 />
                 {progressInfo}
-                {errAllert}  
-                <Table striped bordered condensed hover>
-                    <thead>
-                    <tr>
-                        <td>Ticket</td>
-                        <td>State</td>
-                        <td>fileName</td>
-                    </tr>
-                    </thead>
-                    <tbody>
-                        { 
-                            trackList.map((value) => (
-                                <tr key={value.ticket}>
-                                    <td>{value.ticket}</td>
-                                    <td>{value.state}</td>
-                                    <td>{value.name}</td>
-                                </tr>
-                            ))
-                        }
-                    </tbody>
-                </Table>
+                {errAllert}
+                <PhotoTrackList />  
             </Form>
         )
     }

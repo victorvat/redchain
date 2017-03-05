@@ -37,6 +37,9 @@ getToken = function (user) {
 };
 
 acceptUser = function (req, res, user) {
+    debugger;
+//if(res.status)
+//	return;
     var token = getToken(user);
     res.status(200).json({
         status: 'Login successful!',

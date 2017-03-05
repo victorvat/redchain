@@ -4,14 +4,16 @@ var uuid = require('uuid')
 var multer = require('multer')
 var bodyParser = require('body-parser');
 
+const config = require('./config');
+
 // from config
-store_base = '/temp/uploads';
-store_deep = 2;
+//store_base = '/temp/uploads';
+const store_deep = 2;
 //
 
 function walkStore(filename, cb)
 {
-    let destination = store_base;
+    let destination = config.database.lodir;
     for (let i = 0; i < store_deep; i++) {
         const name = filename.slice(0, i+i+2); // 12,1234,123456
         destination = path.join(destination, name);
@@ -96,6 +98,82 @@ function getWorker(req, res, next) {
 };
 
 ///////////////////
+
+function ticketWorker(req, res, next) {
+    var pool = [];
+    var state = 'wait';
+    const cmd = req.body.cmd;
+    const ticket = req.body.ticket;
+    var offset = req.body.offset;
+    if (offset === undefined) {
+        offset = {
+            cnt: 0,
+            last: undefined
+        } 
+    }
+
+    /// TODO: check ticket state
+    state = 'ready';
+    /// 
+
+    if (cmd === 'get_state') {
+        return res.status(200).json({
+            ticket,
+            state,
+            offset
+        });
+    }
+
+    if (state !== 'ready') {
+        return res.status(200).json({
+            ticket,
+            state,
+            offset,
+            pool
+        });
+    }
+
+     // +++ DEBUG: stub only
+    const tasks = [
+        {s:'c963a1fe-4e88-48ff-9b9b-bda9cf3c7537', l:'7f21f496-d039-487a-8143-d0122ee7f479', pid:1 },
+        {s:'a4ddeef9-1410-4180-8bd7-1688abf02a7d', l:'a4ddeef9-1410-4180-8bd7-1688abf02a7d'},
+        {s:'687b6658-a92e-455d-b0d3-a571022f3756', l:'687b6658-a92e-455d-b0d3-a571022f3756', pid:2 },
+        {s:'3840f2c7-5f99-4d04-b8a4-57d6d6ab3a8a', l:'3840f2c7-5f99-4d04-b8a4-57d6d6ab3a8a'}
+    ];
+    for (let i=0; i < tasks.length; i++) {
+        if (offset.cnt > 50) {
+            state = 'eof';
+            break;
+        }
+        walkStore(tasks[i].s, (store_destination, store_filename) => {
+            fileName = path.resolve(store_destination, store_filename);
+            console.log('=== fileName', fileName);
+            try {
+                const fileData = fs.readFileSync(fileName);
+                pool.push({
+                    id: tasks[i].s,
+                    info: 'empty',
+                    photoid: tasks[i].l,
+                    thumbnail: 'data:image/jpeg;base64,' + fileData.toString('base64'),
+                    personid: tasks[i].pid    
+                });
+                offset.cnt = offset.cnt +1;
+                offset.last = tasks[i];
+                state = 'ready';
+            } catch (err) {
+                console.log('ERR:', err);
+            }
+        });   
+    }
+    // --- DEBUG
+    return res.status(200).json({
+        ticket,
+        state,
+        offset,
+        pool
+    });
+}
+
 ///////////////////
 
-module.exports = { pushParser, pushWorker, getParser, getWorker }
+module.exports = { pushParser, pushWorker, getParser, getWorker, ticketWorker }

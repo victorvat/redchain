@@ -32,8 +32,8 @@ const nav_content = (
             <NavItem href="#">OpRule</NavItem>
           </LinkContainer>
         </NavDropdown>
-        <NavDropdown eventKey={2} title="Create" id="nav-dropdown-2">
 
+        <NavDropdown eventKey={2} title="Create" id="nav-dropdown-2">
           <LinkContainer to="/d/doc/create" activeHref="active">
             <NavItem href="#">Документ</NavItem>
           </LinkContainer>
@@ -56,10 +56,14 @@ const nav_content = (
             <NavItem href="#">OpRule</NavItem>
           </LinkContainer>
         </NavDropdown>
-        <LinkContainer to="/d/photo/find" activeHref="active">
-          <NavItem href="#">PhotoFind</NavItem>
-        </LinkContainer>
+
+        <NavDropdown eventKey={2} title="Photo" id="nav-dropdown-3">
+          <LinkContainer to="/d/photo/find" activeHref="active">
+            <NavItem href="#">Find</NavItem>
+          </LinkContainer>
+        </NavDropdown>
       </Nav>
+      
       <Nav pullRight>
         <LinkContainer to="/login" activeHref="active">
             <NavItem eventKey={99} href="#">Login</NavItem>

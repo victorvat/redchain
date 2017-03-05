@@ -16,6 +16,7 @@ import ContactPage from './assets/contactPage.jsx';
 import DocSpecPage from './assets/docSpecPage.jsx';
 import OpRulePage from './assets/opRulePage.jsx';
 import PhotoFind from './assets/photoFind.jsx';
+import PhotoList from './assets/photoList.jsx';
 
 const content = (
     <Route path="/">
@@ -67,6 +68,7 @@ const content = (
         <Route path="photo">
           <IndexRoute component={PhotoFind} />
           <Route path="find" component={PhotoFind} />
+          <Route path="list/:ticket" component={PhotoList} />
         </Route>
       </Route>
     </Route>

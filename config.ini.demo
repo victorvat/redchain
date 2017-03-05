@@ -26,9 +26,10 @@ connectionString = postgres://username:password@hostname:port/dbname
 
 ; -----------------------------------------------------
 ; lodir is used as default catalogue for lo_export and lo_import functions
+; lodir should be absolute path
 ; default is $PROJECT/lo
 ; -----------------------------------------------------
-lodir = lo
+lodir = /tmp
 
 ; -----------------------------------------------------
 ; security section

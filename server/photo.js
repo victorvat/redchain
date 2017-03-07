@@ -80,7 +80,9 @@ function getWorker(req, res, next) {
     const photoid = req.body.photoid;
     if (photoid === undefined) {
         console.log('ERR: getWorker key not found');
-        res.status(500).json({err:'task not found'});
+        res.status(500).json({
+            err:'task not found'
+        });
         return;
     }
     walkStore(photoid, (store_destination, store_filename) => {
@@ -99,38 +101,36 @@ function getWorker(req, res, next) {
 
 ///////////////////
 
-function ticketWorker(req, res, next) {
-    var pool = [];
+function stateBroker(req, res, next) {
     var state = 'wait';
-    const cmd = req.body.cmd;
+    const ticket = req.body.ticket;
+
+    /// TODO: check ticket state
+    req.body.state = 'ready';
+    /// 
+    next();
+}
+
+function stateWorker(req, res, next) {
+    res.status(200).json({
+        ticket: req.body.ticket,
+        state: req.body.state
+    });
+}
+
+function listWorker(req, res, next) {
+    if (req.body.state !== 'ready') {
+        return next();
+    }
+    var pool = [];
     const ticket = req.body.ticket;
     var offset = req.body.offset;
     if (offset === undefined) {
         offset = {
             cnt: 0,
-            last: undefined
+            last: undefined,
+            eof: false
         } 
-    }
-
-    /// TODO: check ticket state
-    state = 'ready';
-    /// 
-
-    if (cmd === 'get_state') {
-        return res.status(200).json({
-            ticket,
-            state,
-            offset
-        });
-    }
-
-    if (state !== 'ready') {
-        return res.status(200).json({
-            ticket,
-            state,
-            offset,
-            pool
-        });
     }
 
      // +++ DEBUG: stub only
@@ -142,7 +142,7 @@ function ticketWorker(req, res, next) {
     ];
     for (let i=0; i < tasks.length; i++) {
         if (offset.cnt > 50) {
-            state = 'eof';
+            offset.eof = true;
             break;
         }
         walkStore(tasks[i].s, (store_destination, store_filename) => {
@@ -159,16 +159,15 @@ function ticketWorker(req, res, next) {
                 });
                 offset.cnt = offset.cnt +1;
                 offset.last = tasks[i];
-                state = 'ready';
             } catch (err) {
                 console.log('ERR:', err);
             }
         });   
     }
     // --- DEBUG
-    return res.status(200).json({
+    res.status(200).json({
         ticket,
-        state,
+        state: req.body.state,
         offset,
         pool
     });
@@ -176,4 +175,8 @@ function ticketWorker(req, res, next) {
 
 ///////////////////
 
-module.exports = { pushParser, pushWorker, getParser, getWorker, ticketWorker }
+module.exports = { 
+    pushParser, pushWorker,
+    getParser, getWorker,
+    stateBroker, stateWorker, listWorker
+ }

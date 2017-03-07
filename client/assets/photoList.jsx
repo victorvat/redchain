@@ -2,9 +2,10 @@ import React, { PropTypes } from 'react';
 import Lightbox from 'react-image-lightbox';
 import { Alert, Thumbnail, Glyphicon, Button } from 'react-bootstrap';
 import Spinner from 'react-spinner';
-
-//import Gallery from '../components/gallery.jsx'
 import Waypoint from 'react-waypoint';
+
+import gate from '../lib/gate';
+import ErrAlert from '../components/errAlert.jsx'
 
 class PhotoList extends React.Component {
     constructor(props) {
@@ -116,26 +117,30 @@ class PhotoList extends React.Component {
         this.setState({
             isLoading: true
         });
-        this.loadProtoSrc(photoRec.photoid, (err, src) => {
-            if (err) {
-                alert(err);
+
+        const data = {
+            cmd: 'get_photo',
+            photoid: photoRec.photoid
+        }
+        gate.getRaw('/ext/photo_get', data)
+            .then(response => {
+                this.setState({
+                    isLoading: false,
+                    isLightboxOpen: true,
+                    photoMain: {
+                        index,
+                        photo: photoRec,
+                        src: response
+                    },
+                    //photoNext: undefined,
+                    //photoPrev: undefined,
+                });
+            }).catch(error => {
+                alert(error);
                 this.setState({
                     isLoading: false
                 });
-                return;
-            }
-            this.setState({
-                isLoading: false,
-                isLightboxOpen: true,
-                photoMain: {
-                    index,
-                    photo: photoRec,
-                    src
-                },
-                //photoNext: undefined,
-                //photoPrev: undefined,
             });
-        });
     }
 
     handlePhotoHide(event) {
@@ -148,84 +153,44 @@ class PhotoList extends React.Component {
 
     loadThumbnailPool() {
         // limit. Lock as isLoading
-        if (this.state.pool.length > 100) {
-            return;
-        }
         const data = {
             cmd: 'get_thumbnail',
             ticket: this.state.ticket,
             offset: this.state.offset
         }
-        console.log('/ext/photo_list', data)
-        const xhr = new XMLHttpRequest();
-        xhr.open('post', '/ext/photo_list');
-        xhr.setRequestHeader('Content-type', 'application/json; charset=utf-8');
-        xhr.responseType = 'json';
-        xhr.addEventListener('load', () => {
-            if (xhr.status === 200) {
-                console.log("/ext/photo_list 200");
-                if (xhr.response.ticket !== this.state.ticket) {
+        gate.post('/ext/photo_list', data)
+            .then(body => {
+                if (body.ticket !== this.state.ticket) {
                     this.setState({
                         isLoading: false,
                         isEof: false
                     });
                     return;
                 }
-                if (xhr.response.state === 'eof') {
-                    // lock next download
-                    // isLoading: true 
-                    this.setState({
-                        isEof: true
-                    });
-                    return;
-                }
-                if (xhr.response.state === 'ready') {
-                    const oldPool = this.state.pool;
+                if (body.state === 'ready') {
+                    const offset = body.offset;
                     this.setState({
                         isLoading: false,
-                        offset: xhr.response.offset,
-                        pool: [...oldPool, ...xhr.response.pool]
+                        isEof: offset.eof,
+                        offset,
+                        pool: [...this.state.pool, ...body.pool]
                     });
                     return;
                 }
-                alert('ERR STATE: ' + xhr.response.state);
+                alert('ERR STATE: ' + body.state);
                 this.setState({
-                    error: 'ERR STATE:' + xhr.response.state,
+                    error: 'ERR STATE:' + body.state,
                     isEof: true
                 });
-            } else {
-                console.log('ERR:', xhr.status, xhr.response);
-                this.setState({
-                    error: xhr.response,
-                    isEof: true
-                });
-            }
-        });
-        xhr.send(JSON.stringify(data));
-    }
 
-    loadProtoSrc(photoid, cb) {
-        // if (photoRec.src !== undefined) {
-        //     return cb(null, photoRec);
-        // }
-        const data = {
-            cmd: 'get_photo',
-            photoid
-        }
-        const xhr = new XMLHttpRequest();
-        xhr.open('post', '/ext/photo_get');
-        xhr.setRequestHeader('Content-type', 'application/json; charset=utf-8');
-        //xhr.responseType = 'json';
-        xhr.addEventListener('load', () => {
-            if (xhr.status === 200) {
-                console.log("/ext/photo_get 200");
-                return cb(null, xhr.response);
-            } else {
-                console.log('ERR:', xhr.status, xhr.response);
-                return cb(xhr.statusText);
-            }
-        });
-        xhr.send(JSON.stringify(data));
+            })
+            .catch(reson => {
+                console.log('ERR:', reson);
+                this.setState({
+                    error: reson,
+                    isEof: true
+                });
+            });
     }
 
     renderLightbox() {
